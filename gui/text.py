@@ -2,10 +2,10 @@ import tty, sys
 import curses, datetime, locale
 from decimal import Decimal
 
-from electrum.util import format_satoshis, set_verbosity
-from electrum.util import StoreDict
-from electrum.bitcoin import is_valid, COIN, TYPE_ADDRESS
-from electrum import Wallet, WalletStorage
+from lbryum.util import format_satoshis, set_verbosity
+from lbryum.util import StoreDict
+from lbryum.bitcoin import is_valid, COIN, TYPE_ADDRESS
+from lbryum import Wallet, WalletStorage
 
 _ = lambda x:x
 

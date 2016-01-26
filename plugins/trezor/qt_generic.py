@@ -4,16 +4,16 @@ import threading
 from PyQt4.Qt import Qt
 from PyQt4.Qt import QGridLayout, QInputDialog, QPushButton
 from PyQt4.Qt import QVBoxLayout, QLabel, SIGNAL
-from electrum_gui.qt.main_window import StatusBarButton
-from electrum_gui.qt.password_dialog import PasswordDialog, PW_PASSPHRASE
-from electrum_gui.qt.util import *
+from lbryum_gui.qt.main_window import StatusBarButton
+from lbryum_gui.qt.password_dialog import PasswordDialog, PW_PASSPHRASE
+from lbryum_gui.qt.util import *
 from .plugin import TrezorCompatiblePlugin, TIM_NEW, TIM_RECOVER, TIM_MNEMONIC
 
-from electrum.i18n import _
-from electrum.plugins import hook, DeviceMgr
-from electrum.util import PrintError
-from electrum.wallet import Wallet, BIP44_Wallet
-from electrum.wizard import UserCancelled
+from lbryum.i18n import _
+from lbryum.plugins import hook, DeviceMgr
+from lbryum.util import PrintError
+from lbryum.wallet import Wallet, BIP44_Wallet
+from lbryum.wizard import UserCancelled
 
 PASSPHRASE_HELP_SHORT =_(
     "Passphrases allow you to access new wallets, each "

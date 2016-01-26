@@ -8,7 +8,7 @@ import Queue
 from collections import namedtuple
 from functools import partial
 
-from electrum.i18n import _
+from lbryum.i18n import _
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 

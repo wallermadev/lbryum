@@ -1,7 +1,7 @@
 from sys import stderr
 
-from electrum.i18n import _
-from electrum.util import PrintError, SilentException
+from lbryum.i18n import _
+from lbryum.util import PrintError, SilentException
 
 
 class GuiMixin(object):

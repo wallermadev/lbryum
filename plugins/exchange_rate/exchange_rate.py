@@ -8,11 +8,11 @@ import traceback
 import csv
 from decimal import Decimal
 
-from electrum.bitcoin import COIN
-from electrum.plugins import BasePlugin, hook
-from electrum.i18n import _
-from electrum.util import PrintError, ThreadJob, timestamp_to_datetime
-from electrum.util import format_satoshis
+from lbryum.bitcoin import COIN
+from lbryum.plugins import BasePlugin, hook
+from lbryum.i18n import _
+from lbryum.util import PrintError, ThreadJob, timestamp_to_datetime
+from lbryum.util import format_satoshis
 
 
 # See https://en.wikipedia.org/wiki/ISO_4217

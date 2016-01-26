@@ -1,14 +1,14 @@
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
-from electrum_gui.qt.util import *
-from electrum_gui.qt.amountedit import AmountEdit
+from lbryum_gui.qt.util import *
+from lbryum_gui.qt.amountedit import AmountEdit
 
 
-from electrum.bitcoin import COIN
-from electrum.i18n import _
+from lbryum.bitcoin import COIN
+from lbryum.i18n import _
 from decimal import Decimal
 from functools import partial
-from electrum.plugins import hook
+from lbryum.plugins import hook
 from exchange_rate import FxPlugin
 
 class Plugin(FxPlugin, QObject):

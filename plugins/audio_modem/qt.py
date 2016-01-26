@@ -5,10 +5,10 @@ from io import BytesIO
 import sys
 import platform
 
-from electrum.plugins import BasePlugin, hook
-from electrum_gui.qt.util import WaitingDialog, EnterButton, WindowModalDialog
-from electrum.util import print_msg, print_error
-from electrum.i18n import _
+from lbryum.plugins import BasePlugin, hook
+from lbryum_gui.qt.util import WaitingDialog, EnterButton, WindowModalDialog
+from lbryum.util import print_msg, print_error
+from lbryum.i18n import _
 
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *

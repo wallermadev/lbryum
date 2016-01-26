@@ -5,15 +5,15 @@ import datetime
 import traceback
 from decimal import Decimal
 
-import electrum
-from electrum import WalletStorage, Wallet
-from electrum.i18n import _
-from electrum.contacts import Contacts
-from electrum.paymentrequest import InvoiceStore
-from electrum.util import profiler, InvalidPassword
-from electrum.plugins import run_hook
-from electrum.util import format_satoshis, format_satoshis_plain
-from electrum.paymentrequest import PR_UNPAID, PR_PAID, PR_UNKNOWN, PR_EXPIRED
+import lbryum
+from lbryum import WalletStorage, Wallet
+from lbryum.i18n import _
+from lbryum.contacts import Contacts
+from lbryum.paymentrequest import InvoiceStore
+from lbryum.util import profiler, InvalidPassword
+from lbryum.plugins import run_hook
+from lbryum.util import format_satoshis, format_satoshis_plain
+from lbryum.paymentrequest import PR_UNPAID, PR_PAID, PR_UNKNOWN, PR_EXPIRED
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -29,9 +29,9 @@ from kivy.lang import Builder
 
 # lazy imports for factory so that widgets can be used in kv
 Factory.register('InstallWizard',
-                 module='electrum_gui.kivy.uix.dialogs.installwizard')
-Factory.register('InfoBubble', module='electrum_gui.kivy.uix.dialogs')
-Factory.register('ELTextInput', module='electrum_gui.kivy.uix.screens')
+                 module='lbryum_gui.kivy.uix.dialogs.installwizard')
+Factory.register('InfoBubble', module='lbryum_gui.kivy.uix.dialogs')
+Factory.register('ELTextInput', module='lbryum_gui.kivy.uix.screens')
 
 
 #from kivy.core.window import Window
@@ -54,10 +54,10 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.switch import Switch
 from kivy.core.clipboard import Clipboard
 
-Factory.register('TabbedCarousel', module='electrum_gui.kivy.uix.screens')
+Factory.register('TabbedCarousel', module='lbryum_gui.kivy.uix.screens')
 
 
-from electrum.util import base_units
+from lbryum.util import base_units
 
 
 class ElectrumWindow(App):
@@ -228,7 +228,7 @@ class ElectrumWindow(App):
 
     def set_URI(self, url):
         try:
-            url = electrum.util.parse_URI(url, self.on_pr)
+            url = lbryum.util.parse_URI(url, self.on_pr)
         except:
             self.show_info("Invalid URI", url)
             return
@@ -405,9 +405,9 @@ class ElectrumWindow(App):
 
         #setup lazy imports for mainscreen
         Factory.register('AnimatedPopup',
-                         module='electrum_gui.kivy.uix.dialogs')
+                         module='lbryum_gui.kivy.uix.dialogs')
         Factory.register('QRCodeWidget',
-                         module='electrum_gui.kivy.uix.qrcodewidget')
+                         module='lbryum_gui.kivy.uix.qrcodewidget')
 
         # preload widgets. Remove this if you want to load the widgets on demand
         #Cache.append('electrum_widgets', 'AnimatedPopup', Factory.AnimatedPopup())

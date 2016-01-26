@@ -29,15 +29,15 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import PyQt4.QtCore as QtCore
 
-from electrum.i18n import _, set_language
-from electrum.plugins import run_hook
-from electrum import SimpleConfig, Wallet, WalletStorage
-from electrum.paymentrequest import InvoiceStore
-from electrum.contacts import Contacts
-from electrum.synchronizer import Synchronizer
-from electrum.verifier import SPV
-from electrum.util import DebugMem
-from electrum.wallet import Abstract_Wallet
+from lbryum.i18n import _, set_language
+from lbryum.plugins import run_hook
+from lbryum import SimpleConfig, Wallet, WalletStorage
+from lbryum.paymentrequest import InvoiceStore
+from lbryum.contacts import Contacts
+from lbryum.synchronizer import Synchronizer
+from lbryum.verifier import SPV
+from lbryum.util import DebugMem
+from lbryum.wallet import Abstract_Wallet
 from installwizard import InstallWizard
 
 

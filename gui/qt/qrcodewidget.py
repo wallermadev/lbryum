@@ -5,9 +5,9 @@ import PyQt4.QtGui as QtGui
 import os
 import qrcode
 
-import electrum
-from electrum import bmp
-from electrum.i18n import _
+import lbryum
+from lbryum import bmp
+from lbryum.i18n import _
 from util import WindowModalDialog
 
 
@@ -99,7 +99,7 @@ class QRDialog(WindowModalDialog):
         hbox = QHBoxLayout()
         hbox.addStretch(1)
 
-        config = electrum.get_config()
+        config = lbryum.get_config()
         if config:
             filename = os.path.join(config.path, "qrcode.bmp")
 

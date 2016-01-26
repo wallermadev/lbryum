@@ -32,12 +32,12 @@ sys.path.insert(0, os.path.join(script_dir, 'packages'))
 
 import qrcode
 
-imp.load_module('electrum', *imp.find_module('lib'))
+imp.load_module('lbryum', *imp.find_module('lib'))
 
-from electrum import SimpleConfig, Wallet, WalletStorage, format_satoshis
-from electrum import util
-from electrum.transaction import Transaction
-from electrum.bitcoin import base_encode, base_decode
+from lbryum import SimpleConfig, Wallet, WalletStorage, format_satoshis
+from lbryum import util
+from lbryum.transaction import Transaction
+from lbryum.bitcoin import base_encode, base_decode
 
 def modal_dialog(title, msg = None):
     droid.dialogCreateAlert(title,msg)
@@ -160,7 +160,7 @@ def add_menu():
 def make_bitmap(data):
     # fixme: this is highly inefficient
     import qrcode
-    from electrum import bmp
+    from lbryum import bmp
     qr = qrcode.QRCode()
     qr.add_data(data)
     bmp.save_qrcode(qr,"/sdcard/sl4a/qrcode.bmp")

@@ -34,17 +34,17 @@ import PyQt4.QtCore as QtCore
 
 import icons_rc
 
-from electrum.bitcoin import COIN, is_valid, TYPE_ADDRESS
-from electrum.plugins import run_hook
-from electrum.i18n import _
-from electrum.util import (block_explorer, block_explorer_info, format_time,
-                           block_explorer_URL, format_satoshis, PrintError,
-                           format_satoshis_plain, NotEnoughFunds, StoreDict,
-                           SilentException)
-from electrum import Transaction, mnemonic
-from electrum import util, bitcoin, commands
-from electrum import SimpleConfig, COIN_CHOOSERS, paymentrequest
-from electrum.wallet import Wallet, BIP32_RD_Wallet, Multisig_Wallet
+from lbryum.bitcoin import COIN, is_valid, TYPE_ADDRESS
+from lbryum.plugins import run_hook
+from lbryum.i18n import _
+from lbryum.util import (block_explorer, block_explorer_info, format_time,
+                         block_explorer_URL, format_satoshis, PrintError,
+                         format_satoshis_plain, NotEnoughFunds, StoreDict,
+                         SilentException)
+from lbryum import Transaction, mnemonic
+from lbryum import util, bitcoin, commands
+from lbryum import SimpleConfig, COIN_CHOOSERS, paymentrequest
+from lbryum.wallet import Wallet, BIP32_RD_Wallet, Multisig_Wallet
 
 from amountedit import BTCAmountEdit, MyLineEdit, BTCkBEdit
 from network_dialog import NetworkDialog
@@ -54,7 +54,7 @@ from transaction_dialog import show_transaction
 
 
 
-from electrum import ELECTRUM_VERSION
+from lbryum import ELECTRUM_VERSION
 import re
 
 from util import *
@@ -79,7 +79,7 @@ class StatusBarButton(QPushButton):
             self.func()
 
 
-from electrum.paymentrequest import PR_UNPAID, PR_PAID, PR_UNKNOWN, PR_EXPIRED
+from lbryum.paymentrequest import PR_UNPAID, PR_PAID, PR_UNKNOWN, PR_EXPIRED
 
 pr_icons = {
     PR_UNPAID:":icons/unpaid.png",
@@ -2250,7 +2250,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             return
 
     def read_tx_from_qrcode(self):
-        from electrum import qrscanner
+        from lbryum import qrscanner
         try:
             data = qrscanner.scan_qr(self.config)
         except BaseException as e:
@@ -2298,7 +2298,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             self.show_transaction(tx)
 
     def do_process_from_txid(self):
-        from electrum import transaction
+        from lbryum import transaction
         txid, ok = QInputDialog.getText(self, _('Lookup transaction'), _('Transaction ID') + ':')
         if ok and txid:
             txid = str(txid).strip()
@@ -2585,7 +2585,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         lang_help = _('Select which language is used in the GUI (after restart).')
         lang_label = HelpLabel(_('Language') + ':', lang_help)
         lang_combo = QComboBox()
-        from electrum.i18n import languages
+        from lbryum.i18n import languages
         lang_combo.addItems(languages.values())
         try:
             index = languages.keys().index(self.config.get("language",''))
@@ -2765,7 +2765,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         block_ex_combo.currentIndexChanged.connect(on_be)
         gui_widgets.append((block_ex_label, block_ex_combo))
 
-        from electrum import qrscanner
+        from lbryum import qrscanner
         system_cameras = qrscanner._find_system_cameras()
         qr_combo = QComboBox()
         qr_combo.addItem("Default","default")

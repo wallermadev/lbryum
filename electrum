@@ -59,19 +59,19 @@ except Exception:
     sys.exit("cannot import ecdsa.curve_secp256k1. You probably need to upgrade ecdsa.\nTry: sudo pip install --upgrade ecdsa")
 
 
-# load local module as electrum
+# load local module as lbryum
 if is_bundle or is_local or is_android:
     import imp
-    imp.load_module('electrum', *imp.find_module('lib'))
-    imp.load_module('electrum_gui', *imp.find_module('gui'))
+    imp.load_module('lbryum', *imp.find_module('lib'))
+    imp.load_module('lbryum_gui', *imp.find_module('gui'))
 
 
-from electrum import util
-from electrum import SimpleConfig, Network, Wallet, WalletStorage
-from electrum.util import print_msg, print_error, print_stderr, json_encode, json_decode, set_verbosity, InvalidPassword
-from electrum.plugins import Plugins
-from electrum.commands import get_parser, known_commands, Commands, config_variables
-from electrum.daemon import Daemon, get_daemon
+from lbryum import util
+from lbryum import SimpleConfig, Network, Wallet, WalletStorage
+from lbryum.util import print_msg, print_error, print_stderr, json_encode, json_decode, set_verbosity, InvalidPassword
+from lbryum.plugins import Plugins
+from lbryum.commands import get_parser, known_commands, Commands, config_variables
+from lbryum.daemon import Daemon, get_daemon
 
 
 # get password routine
@@ -92,7 +92,7 @@ def init_gui(config, network, daemon, plugins):
     gui_name = config.get('gui', 'qt')
     if gui_name in ['lite', 'classic']:
         gui_name = 'qt'
-    gui = __import__('electrum_gui.' + gui_name, fromlist=['electrum_gui'])
+    gui = __import__('lbryum_gui.' + gui_name, fromlist=['lbryum_gui'])
     gui = gui.ElectrumGui(config, network, daemon, plugins)
     return gui
 
@@ -354,7 +354,7 @@ if __name__ == '__main__':
                     network.start()
                     daemon = Daemon(config, network)
                     if config.get('websocket_server'):
-                        from electrum import websockets
+                        from lbryum import websockets
                         websockets.WebSocketServer(config, network).start()
                     if config.get('requests_dir'):
                         util.check_www_dir(config.get('requests_dir'))

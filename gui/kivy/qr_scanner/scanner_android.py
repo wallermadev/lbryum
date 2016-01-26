@@ -41,7 +41,7 @@ from kivy.utils import platform
 if platform != 'android':
     raise ImportError
 
-from electrum_gui.kivy.qr_scanner import ScannerBase
+from lbryum_gui.kivy.qr_scanner import ScannerBase
 from kivy.properties import ObjectProperty, NumericProperty
 from kivy.uix.widget import Widget
 from kivy.uix.anchorlayout import AnchorLayout

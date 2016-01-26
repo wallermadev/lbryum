@@ -1,4 +1,4 @@
-from electrum.i18n import _
+from lbryum.i18n import _
 
 fullname = _('LabelSync')
 description = '\n'.join([

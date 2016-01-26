@@ -11,11 +11,11 @@ import imp
 version = imp.load_source('version', 'lib/version.py')
 
 if sys.version_info[:3] < (2, 7, 0):
-    sys.exit("Error: Electrum requires Python version >= 2.7.0...")
+    sys.exit("Error: lbryum requires Python version >= 2.7.0...")
 
 data_files = []
 
-if platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
+if False and platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
     usr_share = os.path.join(sys.prefix, "share")
     if not os.access(usr_share, os.W_OK):
         if 'XDG_DATA_HOME' in os.environ.keys():
@@ -28,7 +28,7 @@ if platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
     ]
 
 setup(
-    name="Electrum",
+    name="lbryum",
     version=version.ELECTRUM_VERSION,
     install_requires=[
         'slowaes>=0.1a1',
@@ -41,41 +41,41 @@ setup(
         'jsonrpclib',
     ],
     packages=[
-        'electrum',
-        'electrum_gui',
-        'electrum_gui.qt',
-        'electrum_plugins',
-        'electrum_plugins.audio_modem',
-        'electrum_plugins.cosigner_pool',
-        'electrum_plugins.email_requests',
-        'electrum_plugins.exchange_rate',
-        'electrum_plugins.greenaddress_instant',
-        'electrum_plugins.keepkey',
-        'electrum_plugins.labels',
-        'electrum_plugins.ledger',
-        'electrum_plugins.plot',
-        'electrum_plugins.trezor',
-        'electrum_plugins.trustedcoin',
-        'electrum_plugins.virtualkeyboard',
+        'lbryum',
+        'lbryum_gui',
+        'lbryum_gui.qt',
+        'lbryum_plugins',
+        'lbryum_plugins.audio_modem',
+        'lbryum_plugins.cosigner_pool',
+        'lbryum_plugins.email_requests',
+        'lbryum_plugins.exchange_rate',
+        'lbryum_plugins.greenaddress_instant',
+        'lbryum_plugins.keepkey',
+        'lbryum_plugins.labels',
+        'lbryum_plugins.ledger',
+        'lbryum_plugins.plot',
+        'lbryum_plugins.trezor',
+        'lbryum_plugins.trustedcoin',
+        'lbryum_plugins.virtualkeyboard',
     ],
     package_dir={
-        'electrum': 'lib',
-        'electrum_gui': 'gui',
-        'electrum_plugins': 'plugins',
+        'lbryum': 'lib',
+        'lbryum_gui': 'gui',
+        'lbryum_plugins': 'plugins',
     },
     package_data={
-        'electrum': [
+        'lbryum': [
             'www/index.html',
             'wordlist/*.txt',
             'locale/*/LC_MESSAGES/electrum.mo',
         ]
     },
-    scripts=['electrum'],
+    #scripts=['electrum'],
     data_files=data_files,
-    description="Lightweight Bitcoin Wallet",
-    author="Thomas Voegtlin",
-    author_email="thomasv@electrum.org",
+    description="Lightweight LBRYcrd Wallet",
+    author="LBRY",
+    author_email="jimmy@lbry.io",
     license="GNU GPLv3",
-    url="https://electrum.org",
-    long_description="""Lightweight Bitcoin Wallet"""
+    url="https://lbry.io",
+    long_description="""Lightweight LBRYcrd Wallet"""
 )

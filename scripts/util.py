@@ -1,9 +1,9 @@
-import select, time, electrum, Queue
-from electrum import Connection, Interface, SimpleConfig
-from electrum.network import filter_protocol, parse_servers
+import select, time, lbryum, Queue
+from lbryum import Connection, Interface, SimpleConfig
+from lbryum.network import filter_protocol, parse_servers
 from collections import defaultdict
 
-# electrum.util.set_verbosity(1)
+# lbryum.util.set_verbosity(1)
 def get_interfaces(servers, timeout=10):
     '''Returns a map of servers to connected interfaces.  If any
     connections fail or timeout, they will be missing from the map.

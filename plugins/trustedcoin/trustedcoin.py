@@ -25,15 +25,15 @@ from hashlib import sha256
 from urlparse import urljoin
 from urllib import quote
 
-import electrum
-from electrum import bitcoin
-from electrum.bitcoin import *
-from electrum.mnemonic import Mnemonic
-from electrum import version
-from electrum.wallet import Multisig_Wallet, BIP32_Wallet
-from electrum.i18n import _
-from electrum.plugins import BasePlugin, run_hook, hook
-from electrum.util import NotEnoughFunds
+import lbryum
+from lbryum import bitcoin
+from lbryum.bitcoin import *
+from lbryum.mnemonic import Mnemonic
+from lbryum import version
+from lbryum.wallet import Multisig_Wallet, BIP32_Wallet
+from lbryum.i18n import _
+from lbryum.plugins import BasePlugin, run_hook, hook
+from lbryum.util import NotEnoughFunds
 
 from decimal import Decimal
 

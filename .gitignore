@@ -6,7 +6,7 @@ dist/
 *.egg/
 /electrum.py
 contrib/pyinstaller/
-Electrum.egg-info/
+lbryum.egg-info/
 gui/qt/icons_rc.py
 locale/
 .devlocaltmp/
@@ -14,3 +14,6 @@ locale/
 packages
 env/
 .tox/
+.coverage
+.idea
+.cache

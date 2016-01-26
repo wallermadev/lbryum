@@ -29,7 +29,7 @@ except ImportError:
 
 # minimum required version for kivy
 kivy.require('1.8.0')
-from electrum.i18n import set_language
+from lbryum.i18n import set_language
 from kivy.logger import Logger
 from main_window import ElectrumWindow
 

@@ -4,22 +4,22 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import PyQt4.QtCore as QtCore
 
-import electrum
-from electrum.i18n import _
+import lbryum
+from lbryum.i18n import _
 
 from seed_dialog import SeedDisplayLayout, SeedWarningLayout, SeedInputLayout
 from network_dialog import NetworkChoiceLayout
 from util import *
 from password_dialog import PasswordLayout, PW_NEW, PW_PASSPHRASE
 
-from electrum.wallet import Wallet
-from electrum.mnemonic import prepare_seed
-from electrum.util import SilentException
-from electrum.wizard import (WizardBase, UserCancelled,
-                             MSG_ENTER_PASSWORD, MSG_RESTORE_PASSPHRASE,
-                             MSG_COSIGNER, MSG_ENTER_SEED_OR_MPK,
-                             MSG_SHOW_MPK, MSG_VERIFY_SEED,
-                             MSG_GENERATING_WAIT)
+from lbryum.wallet import Wallet
+from lbryum.mnemonic import prepare_seed
+from lbryum.util import SilentException
+from lbryum.wizard import (WizardBase, UserCancelled,
+                           MSG_ENTER_PASSWORD, MSG_RESTORE_PASSPHRASE,
+                           MSG_COSIGNER, MSG_ENTER_SEED_OR_MPK,
+                           MSG_SHOW_MPK, MSG_VERIFY_SEED,
+                           MSG_GENERATING_WAIT)
 
 def clean_text(seed_e):
     text = unicode(seed_e.toPlainText()).strip()

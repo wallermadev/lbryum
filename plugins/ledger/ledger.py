@@ -4,14 +4,14 @@ from struct import pack,unpack
 from sys import stderr
 from time import sleep
 
-import electrum
-from electrum.bitcoin import EncodeBase58Check, DecodeBase58Check, public_key_to_bc_address, bc_address_to_hash_160, TYPE_ADDRESS
-from electrum.i18n import _
-from electrum.plugins import BasePlugin, hook
-from electrum.transaction import deserialize
-from electrum.wallet import BIP44_Wallet
+import lbryum
+from lbryum.bitcoin import EncodeBase58Check, DecodeBase58Check, public_key_to_bc_address, bc_address_to_hash_160, TYPE_ADDRESS
+from lbryum.i18n import _
+from lbryum.plugins import BasePlugin, hook
+from lbryum.transaction import deserialize
+from lbryum.wallet import BIP44_Wallet
 
-from electrum.util import format_satoshis_plain, print_error, print_msg
+from lbryum.util import format_satoshis_plain, print_error, print_msg
 import hashlib
 import threading
 

@@ -24,9 +24,9 @@ import android
 from decimal import Decimal
 import datetime, re
 
-from electrum import SimpleConfig, Wallet, WalletStorage, format_satoshis
-from electrum.bitcoin import is_address, COIN, TYPE_ADDRESS
-from electrum import util
+from lbryum import SimpleConfig, Wallet, WalletStorage, format_satoshis
+from lbryum.bitcoin import is_address, COIN, TYPE_ADDRESS
+from lbryum import util
 
 
 def modal_dialog(title, msg = None):
@@ -884,7 +884,7 @@ def make_bitmap(data):
     droid.dialogShow()
     try:
         import qrcode
-        from electrum import bmp
+        from lbryum import bmp
         qr = qrcode.QRCode()
         qr.add_data(data)
         bmp.save_qrcode(qr,"/sdcard/sl4a/qrcode.bmp")

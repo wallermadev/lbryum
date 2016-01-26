@@ -23,18 +23,18 @@ import re
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-from electrum_gui.qt.util import *
-from electrum_gui.qt.qrcodewidget import QRCodeWidget
-from electrum_gui.qt.amountedit import AmountEdit
-from electrum_gui.qt.main_window import StatusBarButton
-from electrum.i18n import _
-from electrum.plugins import hook
-from electrum import wizard
+from lbryum_gui.qt.util import *
+from lbryum_gui.qt.qrcodewidget import QRCodeWidget
+from lbryum_gui.qt.amountedit import AmountEdit
+from lbryum_gui.qt.main_window import StatusBarButton
+from lbryum.i18n import _
+from lbryum.plugins import hook
+from lbryum import wizard
 
 from trustedcoin import TrustedCoinPlugin, DISCLAIMER, server
 
 def need_server(wallet, tx):
-    from electrum.account import BIP32_Account
+    from lbryum.account import BIP32_Account
     # Detect if the server is needed
     long_id, short_id = wallet.get_user_id()
     xpub3 = wallet.master_public_keys['x3/']

@@ -2,7 +2,7 @@ from kivy.uix.camera import Camera
 from kivy.clock import Clock
 from kivy.utils import platform
 
-from electrum_gui.kivy.qr_scanner import ScannerBase
+from lbryum_gui.kivy.qr_scanner import ScannerBase
 
 import iconv 
 

@@ -7,16 +7,16 @@ from binascii import unhexlify
 from functools import partial
 from struct import pack
 
-from electrum.account import BIP32_Account
-from electrum.bitcoin import (bc_address_to_hash_160, xpub_from_pubkey,
+from lbryum.account import BIP32_Account
+from lbryum.bitcoin import (bc_address_to_hash_160, xpub_from_pubkey,
                               public_key_to_bc_address, EncodeBase58Check,
                               TYPE_ADDRESS)
-from electrum.i18n import _
-from electrum.plugins import BasePlugin, hook
-from electrum.transaction import (deserialize, is_extended_pubkey,
+from lbryum.i18n import _
+from lbryum.plugins import BasePlugin, hook
+from lbryum.transaction import (deserialize, is_extended_pubkey,
                                   Transaction, x_to_xpub)
-from electrum.wallet import BIP44_Wallet
-from electrum.util import ThreadJob
+from lbryum.wallet import BIP44_Wallet
+from lbryum.util import ThreadJob
 
 
 # Trezor initialization methods
