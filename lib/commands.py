@@ -31,11 +31,13 @@ from decimal import Decimal
 import util
 from util import print_msg, format_satoshis, print_stderr
 import bitcoin
-from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS
+from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
 from transaction import Transaction
+from transaction import deserialize as deserialize_transaction
 import paymentrequest
 from paymentrequest import PR_PAID, PR_UNPAID, PR_UNKNOWN, PR_EXPIRED
 import contacts
+from claims import verify_proof, InvalidProofError, decode_claim_script
 
 known_commands = {}
 
@@ -615,6 +617,46 @@ class Commands:
                 util.print_error(str(e))
         self.network.send([('blockchain.address.subscribe', [address])], callback)
         return True
+
+    @command('n')
+    def getvalueforname(self, name):
+        """Return the value of a name, if it has one, and verify its correctness"""
+        def callback(result):
+            if 'proof' in result:
+                try:
+                    verify_proof(result['proof'], block_header['claim_trie_root'], name)
+                except InvalidProofError:
+                    return {'error': "Proof was invalid"}
+                if 'txhash' in result['proof'] and 'nOut' in result['proof']:
+                    if 'transaction' in result:
+                        computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
+                        tx = deserialize_transaction(result['transaction'])
+                        nOut = result['proof']['nOut']
+                        if result['proof']['txhash'] == computed_txhash:
+                            if 0 <= nOut < len(tx['outputs']):
+                                scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
+                                n, value = decode_claim_script(scriptPubKey)
+                                if n == name:
+                                    return {'value': value}
+                                return {'error': 'name in proof did not match requested name'}
+                            return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
+                        return {'error': "computed txid did not match given transaction: %s vs %s" %
+                                         (computed_txhash, result['proof']['txhash'])
+                        }
+                    return {'error': "didn't receive a transaction with the proof"}
+                return {'value': {}}
+            return {'error': "proof not in result"}
+        height = self.network.get_local_height()
+        block_header = self.network.blockchain.read_header(height)
+        blockhash = self.network.blockchain.hash_header(block_header)
+        response = self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
+        return callback(response)
+
+    @command('n')
+    def getclaimsfromtx(self, txid):
+        """Return the claims which are in a transaction"""
+        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+
 
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',

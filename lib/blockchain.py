@@ -21,9 +21,12 @@ import os
 import util
 from bitcoin import *
 
-MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
+MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
 HEADER_SIZE = 112
+
+
+BLOCKS_PER_CHUNK = 720
 
 
 class Blockchain(util.PrintError):
@@ -46,7 +49,7 @@ class Blockchain(util.PrintError):
     def verify_header(self, header, prev_header, bits, target):
         prev_hash = self.hash_header(prev_header)
         assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash'))
-        assert bits == header.get('bits'), "bits mismatch: %s vs %s" % (bits, header.get('bits'))
+        assert bits == header.get('bits'), "bits mismatch: %s vs %s (hash: %s)" % (bits, header.get('bits'), self.hash_header(header))
         _hash = self.hash_header(header)
         assert int('0x' + _hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _hash, 16), target)
 
@@ -55,7 +58,7 @@ class Blockchain(util.PrintError):
         prev_header = self.read_header(first_header.get('block_height') - 1)
         for header in chain:
             height = header.get('block_height')
-            bits, target = self.get_target(height / 2016, chain)
+            bits, target = self.get_target(height / BLOCKS_PER_CHUNK, chain)
             self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
@@ -63,7 +66,7 @@ class Blockchain(util.PrintError):
         num = len(data) / HEADER_SIZE
         prev_header = None
         if index != 0:
-            prev_header = self.read_header(index*2016 - 1)
+            prev_header = self.read_header(index*BLOCKS_PER_CHUNK - 1)
         bits, target = self.get_target(index)
         for i in range(num):
             raw_header = data[i*HEADER_SIZE:(i+1) * HEADER_SIZE]
@@ -118,7 +121,7 @@ class Blockchain(util.PrintError):
     def save_chunk(self, index, chunk):
         filename = self.path()
         f = open(filename, 'rb+')
-        f.seek(index * 2016 * HEADER_SIZE)
+        f.seek(index * BLOCKS_PER_CHUNK * HEADER_SIZE)
         h = f.write(chunk)
         f.close()
         self.set_local_height()
@@ -154,29 +157,34 @@ class Blockchain(util.PrintError):
 
     def get_target(self, index, chain=None):
         if index == 0:
-            return 0x1d00ffff, MAX_TARGET
-        first = self.read_header((index-1) * 2016)
-        last = self.read_header(index*2016 - 1)
+            return 0x1f00ffff, MAX_TARGET
+        first = self.read_header((index-1) * BLOCKS_PER_CHUNK)
+        last = self.read_header(index*BLOCKS_PER_CHUNK - 1)
         if last is None:
             for h in chain:
-                if h.get('block_height') == index*2016 - 1:
+                if h.get('block_height') == index*BLOCKS_PER_CHUNK - 1:
                     last = h
         assert last is not None
         # bits to target
         bits = last.get('bits')
         bitsN = (bits >> 24) & 0xff
-        assert bitsN >= 0x03 and bitsN <= 0x1d, "First part of bits should be in [0x03, 0x1d]"
+        assert bitsN >= 0x03 and bitsN <= 0x1f, "First part of bits should be in [0x03, 0x1d]"
         bitsBase = bits & 0xffffff
         assert bitsBase >= 0x8000 and bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
         target = bitsBase << (8 * (bitsN-3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 14 * 24 * 60 * 60
+        nTargetTimespan = 30 * 60 * 12#14 * 24 * 60 * 60
         nActualTimespan = max(nActualTimespan, nTargetTimespan / 4)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
-        new_target = min(MAX_TARGET, (target*nActualTimespan) / nTargetTimespan)
+        new_target = target*nActualTimespan
+        while new_target >= 2**256:
+            new_target -= 2**256
+        new_target = new_target / nTargetTimespan
+        new_target = min(MAX_TARGET, new_target)
         # convert new target to bits
-        c = ("%064x" % new_target)[2:]
+        c = ("%064x" % new_target)
+        c = c[2:]
         while c[:2] == '00' and len(c) > 6:
             c = c[2:]
         bitsN, bitsBase = len(c) / 2, int('0x' + c[:6], 16)

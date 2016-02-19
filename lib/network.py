@@ -16,13 +16,13 @@ import json
 import util
 from bitcoin import *
 from interface import Connection, Interface
-from blockchain import Blockchain
+from blockchain import Blockchain, BLOCKS_PER_CHUNK
 from version import ELECTRUM_VERSION, PROTOCOL_VERSION
 
 DEFAULT_PORTS = {'t':'50001', 's':'50002', 'h':'8081', 'g':'8082'}
 
 DEFAULT_SERVERS = {
-    '127.0.0.':DEFAULT_PORTS,
+    '127.0.0.1':DEFAULT_PORTS,
     #'erbium1.sytes.net':{'t':'50001', 's':'50002'},
     #'ecdsa.net':{'t':'50001', 's':'110'},
     #'electrum0.electricnewyear.net':{'t':'50001', 's':'50002'},
@@ -711,7 +711,7 @@ class Network(util.DaemonThread):
         if if_height <= local_height:
             return False
         elif if_height > local_height + 50:
-            self.request_chunk(interface, data, (local_height + 1) / 2016)
+            self.request_chunk(interface, data, (local_height + 1) / BLOCKS_PER_CHUNK)
         else:
             self.request_header(interface, data, if_height)
         return True
