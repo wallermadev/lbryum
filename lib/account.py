@@ -60,7 +60,7 @@ class Account(object):
         address = self.pubkeys_to_address(pubkeys)
         pubkeys_list.append(pubkeys)
         addr_list.append(address)
-        print_msg(address)
+        #print_msg(address)
         return address
 
     def pubkeys_to_address(self, pubkey):

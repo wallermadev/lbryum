@@ -657,6 +657,16 @@ class Commands:
         """Return the claims which are in a transaction"""
         return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
 
+    @command('n')
+    def getblock(self, blockhash):
+        """Return a block matching the given blockhash"""
+        return self.network.synchronous_get(('blockchain.block.get_block', [blockhash]))
+
+    @command('n')
+    def getclaimtrie(self):
+        """Return the entire claim trie"""
+        return self.network.synchronous_get(('blockchain.claimtrie.get', []))
+
 
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',
