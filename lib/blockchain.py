@@ -34,9 +34,10 @@ class Blockchain(util.PrintError):
     def __init__(self, config, network):
         self.config = config
         self.network = network
-        self.headers_url = "https://headers.lbrycrd.lbry.io/blockchain_headers"
+        self.headers_url = "http://seeddata.lbrycrd.lbry.io/blockchain_headers"
         self.local_height = 0
         self.set_local_height()
+        self.retrieving_headers = False
 
     def height(self):
         return self.local_height
@@ -112,7 +113,13 @@ class Blockchain(util.PrintError):
             import urllib, socket
             socket.setdefaulttimeout(30)
             self.print_error("downloading ", self.headers_url)
-            urllib.urlretrieve(self.headers_url, filename)
+            self.retrieving_headers = True
+            try:
+                urllib.urlretrieve(self.headers_url, filename)
+            except:
+                raise
+            finally:
+                self.retrieving_headers = False
             self.print_error("done.")
         except Exception:
             self.print_error("download failed. creating file", filename)
