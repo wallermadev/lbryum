@@ -206,7 +206,7 @@ def read_user_config(path):
         try:
             result = ast.literal_eval(data)
         except:
-            print_msg("Error: Cannot read config file.")
+            #print_msg("Error: Cannot read config file.")
             return {}
     if not type(result) is dict:
         return {}
