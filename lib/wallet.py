@@ -644,15 +644,19 @@ class Abstract_Wallet(PrintError):
                 if is_cb and tx_height + COINBASE_MATURITY > self.get_local_height():
                     continue
                 prevout_hash, prevout_n = txo.split(':')
-                output = {
-                    'address':addr,
-                    'value':value,
-                    'prevout_n':int(prevout_n),
-                    'prevout_hash':prevout_hash,
-                    'height':tx_height,
-                    'coinbase':is_cb
-                }
-                coins.append(output)
+                tx = self.transactions.get(prevout_hash)
+                tx.deserialize()
+                txout = tx.outputs()[int(prevout_n)]
+                if txout[0] & TYPE_CLAIM == 0:
+                    output = {
+                        'address':addr,
+                        'value':value,
+                        'prevout_n':int(prevout_n),
+                        'prevout_hash':prevout_hash,
+                        'height':tx_height,
+                        'coinbase':is_cb
+                    }
+                    coins.append(output)
                 continue
         return coins
 
@@ -755,9 +759,11 @@ class Abstract_Wallet(PrintError):
             for n, txo in enumerate(tx.outputs()):
                 ser = tx_hash + ':%d'%n
                 _type, x, v = txo
-                if _type == TYPE_ADDRESS:
+                if _type & TYPE_CLAIM:
+                    x = x[1]
+                if _type & TYPE_ADDRESS:
                     addr = x
-                elif _type == TYPE_PUBKEY:
+                elif _type & TYPE_PUBKEY:
                     addr = public_key_to_bc_address(x.decode('hex'))
                 else:
                     addr = None

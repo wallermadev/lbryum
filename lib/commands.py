@@ -33,11 +33,11 @@ from util import print_msg, format_satoshis, print_stderr
 import bitcoin
 from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
 from transaction import Transaction
-from transaction import deserialize as deserialize_transaction
+from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
 import paymentrequest
 from paymentrequest import PR_PAID, PR_UNPAID, PR_UNKNOWN, PR_EXPIRED
 import contacts
-from claims import verify_proof, InvalidProofError, decode_claim_script
+from claims import verify_proof, InvalidProofError
 
 known_commands = {}
 
@@ -635,7 +635,8 @@ class Commands:
                         if result['proof']['txhash'] == computed_txhash:
                             if 0 <= nOut < len(tx['outputs']):
                                 scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
-                                n, value = decode_claim_script(scriptPubKey)
+                                decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
+                                n, value, rest = decode_claim_script(decoded_script)
                                 if n == name:
                                     return {'value': value}
                                 return {'error': 'name in proof did not match requested name'}

@@ -385,32 +385,62 @@ def parse_scriptSig(d, bytes):
     d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 5)
 
 
+def decode_claim_script(decoded_script):
+    if len(decoded_script) <= 6:
+        return False
+    if decoded_script[0][0] != 0:
+        return False
+    if not (0 < decoded_script[1][0] <= opcodes.OP_PUSHDATA4):
+        return False
+    name = decoded_script[1][1]
+    if not (0 < decoded_script[2][0] <= opcodes.OP_PUSHDATA4):
+        return False
+    value = decoded_script[2][1]
+    if decoded_script[3][0] != opcodes.OP_2DROP:
+        return False
+    if decoded_script[4][0] != opcodes.OP_DROP:
+        return False
+    return name, value, decoded_script[5:]
 
 
-def get_address_from_output_script(bytes):
-    decoded = [ x for x in script_GetOp(bytes) ]
+def get_address_from_output_script(script_bytes):
+    output_type = 0
+    decoded = [ x for x in script_GetOp(script_bytes) ]
+    r = decode_claim_script(decoded)
+    claim_args = None
+    if r is not False:
+        claim_name, claim_value, decoded = r
+        claim_args = (claim_name, claim_value)
+        output_type |= TYPE_CLAIM
 
     # The Genesis Block, self-payments, and pay-by-IP-address payments look like:
     # 65 BYTES:... CHECKSIG
-    match = [ opcodes.OP_PUSHDATA4, opcodes.OP_CHECKSIG ]
-    if match_decoded(decoded, match):
-        return TYPE_PUBKEY, decoded[0][1].encode('hex')
+    match_pubkey = [ opcodes.OP_PUSHDATA4, opcodes.OP_CHECKSIG ]
 
     # Pay-by-Bitcoin-address TxOuts look like:
     # DUP HASH160 20 BYTES:... EQUALVERIFY CHECKSIG
-    match = [ opcodes.OP_DUP, opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUALVERIFY, opcodes.OP_CHECKSIG ]
-    if match_decoded(decoded, match):
-        return TYPE_ADDRESS, hash_160_to_bc_address(decoded[2][1])
+    match_p2pkh = [ opcodes.OP_DUP, opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUALVERIFY, opcodes.OP_CHECKSIG ]
 
     # p2sh
-    match = [ opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUAL ]
-    if match_decoded(decoded, match):
-        return TYPE_ADDRESS, hash_160_to_bc_address(decoded[1][1],5)
+    match_p2sh = [ opcodes.OP_HASH160, opcodes.OP_PUSHDATA4, opcodes.OP_EQUAL ]
 
-    return TYPE_SCRIPT, bytes
+    if match_decoded(decoded, match_pubkey):
+        output_val = decoded[0][1].encode('hex')
+        output_type |= TYPE_PUBKEY
+    elif match_decoded(decoded, match_p2pkh):
+        output_val = hash_160_to_bc_address(decoded[2][1])
+        output_type |= TYPE_ADDRESS
+    elif match_decoded(decoded, match_p2sh):
+        output_val = hash_160_to_bc_address(decoded[1][1], 5)
+        output_type |= TYPE_ADDRESS
+    else:
+        output_val = bytes
+        output_type |= TYPE_SCRIPT
 
+    if output_type & TYPE_CLAIM:
+        output_val = (claim_args, output_val)
 
-
+    return output_type, output_val
 
 
 def parse_input(vds):
@@ -588,16 +618,24 @@ class Transaction:
 
     @classmethod
     def pay_script(self, output_type, addr):
-        if output_type == TYPE_SCRIPT:
-            return addr.encode('hex')
-        elif output_type == TYPE_ADDRESS:
+        script = ''
+        if output_type & TYPE_CLAIM:
+            claim, addr = addr
+            claim_name, claim_value = claim
+            script += '00'                                          # op_claim_name
+            script += push_script(claim_name.encode('hex'))
+            script += push_script(claim_value.encode('hex'))
+            script += 'd675'                                        # op_2drop, op_drop
+        if output_type & TYPE_SCRIPT:
+            script += addr.encode('hex')
+        elif output_type & TYPE_ADDRESS:                                      # op_2drop, op_drop
             addrtype, hash_160 = bc_address_to_hash_160(addr)
             if addrtype == 0:
-                script = '76a9'                                      # op_dup, op_hash_160
+                script += '76a9'                                      # op_dup, op_hash_160
                 script += push_script(hash_160.encode('hex'))
                 script += '88ac'                                     # op_equalverify, op_checksig
             elif addrtype == 5:
-                script = 'a9'                                        # op_hash_160
+                script += 'a9'                                        # op_hash_160
                 script += push_script(hash_160.encode('hex'))
                 script += '87'                                       # op_equal
             else:
@@ -815,9 +853,11 @@ class Transaction:
         """convert pubkeys to addresses"""
         o = []
         for type, x, v in self.outputs():
-            if type == TYPE_ADDRESS:
+            if type & TYPE_CLAIM:
+                x = x[1]
+            if type & TYPE_ADDRESS:
                 addr = x
-            elif type == TYPE_PUBKEY:
+            elif type & TYPE_PUBKEY:
                 addr = public_key_to_bc_address(x.decode('hex'))
             else:
                 addr = 'SCRIPT ' + x.encode('hex')

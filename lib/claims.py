@@ -1,6 +1,6 @@
 import binascii
 from lbryum.bitcoin import Hash
-from transaction import script_GetOp, opcodes
+from transaction import opcodes
 
 
 class InvalidProofError(Exception):
@@ -63,22 +63,3 @@ def verify_proof(proof, rootHash, name):
     if not name.startswith(computed_name):
         raise InvalidProofError("name fragment does not match proof")
     return True
-
-
-def decode_claim_script(script_pub_key):
-    decoded_script = [r for r in script_GetOp(script_pub_key.decode('hex'))]
-    if len(decoded_script) <= 6:
-        return False
-    if decoded_script[0][0] != 0:
-        return False
-    if not (0 < decoded_script[1][0] <= opcodes.OP_PUSHDATA4):
-        return False
-    name = decoded_script[1][1]
-    if not (0 < decoded_script[2][0] <= opcodes.OP_PUSHDATA4):
-        return False
-    value = decoded_script[2][1]
-    if decoded_script[3][0] != opcodes.OP_2DROP:
-        return False
-    if decoded_script[4][0] != opcodes.OP_DROP:
-        return False
-    return name, value
