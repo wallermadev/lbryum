@@ -625,7 +625,7 @@ class Transaction:
             script += '00'                                          # op_claim_name
             script += push_script(claim_name.encode('hex'))
             script += push_script(claim_value.encode('hex'))
-            script += 'd675'                                        # op_2drop, op_drop
+            script += '6d75'                                        # op_2drop, op_drop
         if output_type & TYPE_SCRIPT:
             script += addr.encode('hex')
         elif output_type & TYPE_ADDRESS:                                      # op_2drop, op_drop

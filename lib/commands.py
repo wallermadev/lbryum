@@ -31,7 +31,7 @@ from decimal import Decimal
 import util
 from util import print_msg, format_satoshis, print_stderr
 import bitcoin
-from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
+from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash, TYPE_CLAIM
 from transaction import Transaction
 from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
 import paymentrequest
@@ -388,7 +388,7 @@ class Commands:
         sig = base64.b64decode(signature)
         return bitcoin.verify_message(address, sig, message)
 
-    def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned):
+    def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned, claim_name=None, claim_val=None):
         self.nocheck = nocheck
         change_addr = self._resolver(change_addr)
         domain = None if domain is None else map(self._resolver, domain)
@@ -411,7 +411,13 @@ class Commands:
                 amount -= fee
             else:
                 amount = int(COIN*Decimal(amount))
-            final_outputs.append((TYPE_ADDRESS, address, amount))
+            txout_type = TYPE_ADDRESS
+            val = address
+            if claim_name is not None and claim_val is not None:
+                assert len(outputs) == 1
+                txout_type |= TYPE_CLAIM
+                val = ((claim_name, claim_val), val)
+            final_outputs.append((txout_type, val, amount))
 
         coins = self.wallet.get_spendable_coins(domain)
         tx = self.wallet.make_unsigned_transaction(coins, final_outputs, self.config, fee, change_addr)
@@ -432,6 +438,14 @@ class Commands:
         """Create a multi-output transaction. """
         domain = [from_addr] if from_addr else None
         tx = self._mktx(outputs, tx_fee, change_addr, domain, nocheck, unsigned)
+        return tx.as_dict()
+
+    @command('wp')
+    def claimname(self, destination, amount, name, val, tx_fee=None, from_addr=None, change_addr=None,
+                  nocheck=False, unsigned=False):
+        """Claim a name."""
+        domain = [from_addr] if from_addr else None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned, name, val)
         return tx.as_dict()
 
     @command('w')
@@ -667,6 +681,10 @@ class Commands:
     def getclaimtrie(self):
         """Return the entire claim trie"""
         return self.network.synchronous_get(('blockchain.claimtrie.get', []))
+
+    @command('w')
+    def getnameclaims(self):
+        return self.wallet.get_name_claims()
 
 
 param_descriptions = {

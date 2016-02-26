@@ -41,6 +41,10 @@ TYPE_SCRIPT  = 4
 TYPE_CLAIM   = 8
 
 
+# claim related constants
+EXPIRATION_BLOCKS = 262974
+
+
 # AES encryption
 EncodeAES = lambda secret, s: base64.b64encode(aes.encryptData(secret,s))
 DecodeAES = lambda secret, e: aes.decryptData(secret, base64.b64decode(e))

@@ -888,6 +888,41 @@ class Abstract_Wallet(PrintError):
 
         return h2
 
+    def get_name_claims(self, domain=None):
+        claims = []
+        if domain is None:
+            domain = self.get_account_addresses(None)
+
+        for addr in domain:
+            txos, txis = self.get_addr_io(addr)
+            for txo, v in txos.items():
+                tx_height, value, is_cb = v
+                prevout_hash, prevout_n = txo.split(':')
+                tx = self.transactions.get(prevout_hash)
+                tx.deserialize()
+                txout = tx.outputs()[int(prevout_n)]
+                if txout[0] & TYPE_CLAIM:
+                    claim_name, claim_value = txout[1][0]
+                    local_height = self.network.get_local_height()
+                    expired = tx_height + bitcoin.EXPIRATION_BLOCKS <= local_height
+                    output = {
+                        'name':  claim_name,
+                        'value': claim_value,
+                        'txid': prevout_hash,
+                        'address': addr,
+                        'category': "name",
+                        'amount': float(value)/COIN,
+                        'height': tx_height,
+                        'expiration height': tx_height + bitcoin.EXPIRATION_BLOCKS,
+                        'expired': expired,
+                        'confirmations': local_height - tx_height,
+                        'is spent': txo in txis,
+                    }
+                    if not expired:
+                        output['blocks to expiration'] = tx_height + bitcoin.EXPIRATION_BLOCKS - local_height
+                    claims.append(output)
+        return claims
+
     def get_label(self, tx_hash):
         label = self.labels.get(tx_hash, '')
         if label is '':
@@ -934,7 +969,9 @@ class Abstract_Wallet(PrintError):
     def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None):
         # check outputs
         for type, data, value in outputs:
-            if type == TYPE_ADDRESS:
+            if type & TYPE_CLAIM:
+                data = data[1]
+            if type & TYPE_ADDRESS:
                 assert is_address(data), "Address " + data + " is invalid!"
 
         # Avoid index-out-of-range with coins[0] below
