@@ -196,7 +196,8 @@ class CoinChooserBase(PrintError):
         buckets = self.choose_buckets(buckets, sufficient_funds,
                                       self.penalty_func(tx))
 
-        tx.add_inputs([claim_coin])
+        if claim_coin is not None:
+            tx.add_inputs([claim_coin])
         tx.add_inputs([coin for b in buckets for coin in b.coins])
         tx_size = base_size + sum(bucket.size for bucket in buckets)
 
