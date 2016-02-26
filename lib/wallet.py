@@ -631,8 +631,9 @@ class Abstract_Wallet(PrintError):
         return c, u, x
 
 
-    def get_spendable_coins(self, domain = None, exclude_frozen = True):
+    def get_spendable_coins(self, domain = None, exclude_frozen = True, abandon_txid=None):
         coins = []
+        found_abandon_txid = False
         if domain is None:
             domain = self.addresses(True)
         if exclude_frozen:
@@ -647,17 +648,25 @@ class Abstract_Wallet(PrintError):
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
-                if txout[0] & TYPE_CLAIM == 0:
+                if txout[0] & TYPE_CLAIM == 0 or (abandon_txid is not None and prevout_hash == abandon_txid):
                     output = {
                         'address':addr,
                         'value':value,
                         'prevout_n':int(prevout_n),
                         'prevout_hash':prevout_hash,
                         'height':tx_height,
-                        'coinbase':is_cb
+                        'coinbase':is_cb,
+                        'is_claim': bool(txout[0] & TYPE_CLAIM)
                     }
+                    if txout[0] & TYPE_CLAIM:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_value'] = txout[1][0][1]
                     coins.append(output)
+                if abandon_txid is not None and prevout_hash == abandon_txid:
+                    found_abandon_txid = True
                 continue
+        if abandon_txid is not None and not found_abandon_txid:
+            raise ValueError("Can't spend from the given txid")
         return coins
 
     def get_max_amount(self, config, inputs, fee):
@@ -966,7 +975,7 @@ class Abstract_Wallet(PrintError):
         klass = COIN_CHOOSERS[self.coin_chooser_name(config)]
         return klass()
 
-    def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None):
+    def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None, abandon_txid=None):
         # check outputs
         for type, data, value in outputs:
             if type & TYPE_CLAIM:
@@ -1015,7 +1024,7 @@ class Abstract_Wallet(PrintError):
         max_change = self.max_change_outputs if self.multiple_change else 1
         coin_chooser = self.coin_chooser(config)
         tx = coin_chooser.make_tx(coins, outputs, change_addrs[:max_change],
-                                  fee_estimator, dust_threshold)
+                                  fee_estimator, dust_threshold, abandon_txid=abandon_txid)
 
         # Sort the inputs and outputs deterministically
         tx.BIP_LI01_sort()

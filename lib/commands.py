@@ -388,7 +388,8 @@ class Commands:
         sig = base64.b64decode(signature)
         return bitcoin.verify_message(address, sig, message)
 
-    def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned, claim_name=None, claim_val=None):
+    def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned, claim_name=None, claim_val=None,
+              abandon_txid=None):
         self.nocheck = nocheck
         change_addr = self._resolver(change_addr)
         domain = None if domain is None else map(self._resolver, domain)
@@ -419,8 +420,9 @@ class Commands:
                 val = ((claim_name, claim_val), val)
             final_outputs.append((txout_type, val, amount))
 
-        coins = self.wallet.get_spendable_coins(domain)
-        tx = self.wallet.make_unsigned_transaction(coins, final_outputs, self.config, fee, change_addr)
+        coins = self.wallet.get_spendable_coins(domain, abandon_txid=abandon_txid)
+        tx = self.wallet.make_unsigned_transaction(coins, final_outputs, self.config, fee, change_addr,
+                                                   abandon_txid=abandon_txid)
         str(tx) #this serializes
         if not unsigned:
             self.wallet.sign_transaction(tx, self._password)
@@ -438,14 +440,6 @@ class Commands:
         """Create a multi-output transaction. """
         domain = [from_addr] if from_addr else None
         tx = self._mktx(outputs, tx_fee, change_addr, domain, nocheck, unsigned)
-        return tx.as_dict()
-
-    @command('wp')
-    def claimname(self, destination, amount, name, val, tx_fee=None, from_addr=None, change_addr=None,
-                  nocheck=False, unsigned=False):
-        """Claim a name."""
-        domain = [from_addr] if from_addr else None
-        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned, name, val)
         return tx.as_dict()
 
     @command('w')
@@ -685,6 +679,24 @@ class Commands:
     @command('w')
     def getnameclaims(self):
         return self.wallet.get_name_claims()
+
+    @command('wp')
+    def claimname(self, destination, amount, name, val, tx_fee=None, from_addr=None, change_addr=None,
+                  nocheck=False, unsigned=False):
+        """Claim a name."""
+        domain = [from_addr] if from_addr else None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned,
+                        claim_name=name, claim_val=val)
+        return tx.as_dict()
+
+
+    @command('wp')
+    def abandonclaim(self, txid, destination, amount, tx_fee=None, change_addr=None,
+                     nocheck=False, unsigned=False):
+        domain = None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned,
+                        abandon_txid=txid)
+        return tx.as_dict()
 
 
 param_descriptions = {

@@ -160,7 +160,7 @@ class CoinChooserBase(PrintError):
         return change
 
     def make_tx(self, coins, outputs, change_addrs, fee_estimator,
-                dust_threshold):
+                dust_threshold, abandon_txid=None):
         '''Select unspent coins to spend to pay outputs.  If the change is
         greater than dust_threshold (after adding the change output to
         the transaction) it is kept, otherwise none is sent and it is
@@ -176,6 +176,14 @@ class CoinChooserBase(PrintError):
         base_size = tx.estimated_size()
         spent_amount = tx.output_value()
 
+        claim_coin = None
+        if abandon_txid is not None:
+            claim_coins = [coin for coin in coins if coin['is_claim']]
+            assert len(claim_coins) >= 1
+            claim_coin = claim_coins[0]
+            spent_amount -= claim_coin['value']
+            coins = [coin for coin in coins if not coin['is_claim']]
+
         def sufficient_funds(buckets):
             '''Given a list of buckets, return True if it has enough
             value to pay for the transaction'''
@@ -188,6 +196,7 @@ class CoinChooserBase(PrintError):
         buckets = self.choose_buckets(buckets, sufficient_funds,
                                       self.penalty_func(tx))
 
+        tx.add_inputs([claim_coin])
         tx.add_inputs([coin for b in buckets for coin in b.coins])
         tx_size = base_size + sum(bucket.size for bucket in buckets)
 

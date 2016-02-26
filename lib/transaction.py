@@ -685,7 +685,11 @@ class Transaction:
                 script += push_script(redeem_script)
 
         elif for_sig==i:
-            script = txin['redeemScript'] if p2sh else self.pay_script(TYPE_ADDRESS, address)
+            script_type = TYPE_ADDRESS
+            if txin['is_claim']:
+                script_type |= TYPE_CLAIM
+                address = ((txin['claim_name'], txin['claim_value']), address)
+            script = txin['redeemScript'] if p2sh else self.pay_script(script_type, address)
         else:
             script = ''
 
