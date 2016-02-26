@@ -631,8 +631,9 @@ class Abstract_Wallet(PrintError):
         return c, u, x
 
 
-    def get_spendable_coins(self, domain = None, exclude_frozen = True):
+    def get_spendable_coins(self, domain = None, exclude_frozen = True, abandon_txid=None):
         coins = []
+        found_abandon_txid = False
         if domain is None:
             domain = self.addresses(True)
         if exclude_frozen:
@@ -644,16 +645,28 @@ class Abstract_Wallet(PrintError):
                 if is_cb and tx_height + COINBASE_MATURITY > self.get_local_height():
                     continue
                 prevout_hash, prevout_n = txo.split(':')
-                output = {
-                    'address':addr,
-                    'value':value,
-                    'prevout_n':int(prevout_n),
-                    'prevout_hash':prevout_hash,
-                    'height':tx_height,
-                    'coinbase':is_cb
-                }
-                coins.append(output)
+                tx = self.transactions.get(prevout_hash)
+                tx.deserialize()
+                txout = tx.outputs()[int(prevout_n)]
+                if txout[0] & TYPE_CLAIM == 0 or (abandon_txid is not None and prevout_hash == abandon_txid):
+                    output = {
+                        'address':addr,
+                        'value':value,
+                        'prevout_n':int(prevout_n),
+                        'prevout_hash':prevout_hash,
+                        'height':tx_height,
+                        'coinbase':is_cb,
+                        'is_claim': bool(txout[0] & TYPE_CLAIM)
+                    }
+                    if txout[0] & TYPE_CLAIM:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_value'] = txout[1][0][1]
+                    coins.append(output)
+                if abandon_txid is not None and prevout_hash == abandon_txid:
+                    found_abandon_txid = True
                 continue
+        if abandon_txid is not None and not found_abandon_txid:
+            raise ValueError("Can't spend from the given txid")
         return coins
 
     def get_max_amount(self, config, inputs, fee):
@@ -755,9 +768,11 @@ class Abstract_Wallet(PrintError):
             for n, txo in enumerate(tx.outputs()):
                 ser = tx_hash + ':%d'%n
                 _type, x, v = txo
-                if _type == TYPE_ADDRESS:
+                if _type & TYPE_CLAIM:
+                    x = x[1]
+                if _type & TYPE_ADDRESS:
                     addr = x
-                elif _type == TYPE_PUBKEY:
+                elif _type & TYPE_PUBKEY:
                     addr = public_key_to_bc_address(x.decode('hex'))
                 else:
                     addr = None
@@ -882,6 +897,41 @@ class Abstract_Wallet(PrintError):
 
         return h2
 
+    def get_name_claims(self, domain=None):
+        claims = []
+        if domain is None:
+            domain = self.get_account_addresses(None)
+
+        for addr in domain:
+            txos, txis = self.get_addr_io(addr)
+            for txo, v in txos.items():
+                tx_height, value, is_cb = v
+                prevout_hash, prevout_n = txo.split(':')
+                tx = self.transactions.get(prevout_hash)
+                tx.deserialize()
+                txout = tx.outputs()[int(prevout_n)]
+                if txout[0] & TYPE_CLAIM:
+                    claim_name, claim_value = txout[1][0]
+                    local_height = self.network.get_local_height()
+                    expired = tx_height + bitcoin.EXPIRATION_BLOCKS <= local_height
+                    output = {
+                        'name':  claim_name,
+                        'value': claim_value,
+                        'txid': prevout_hash,
+                        'address': addr,
+                        'category': "name",
+                        'amount': float(value)/COIN,
+                        'height': tx_height,
+                        'expiration height': tx_height + bitcoin.EXPIRATION_BLOCKS,
+                        'expired': expired,
+                        'confirmations': local_height - tx_height,
+                        'is spent': txo in txis,
+                    }
+                    if not expired:
+                        output['blocks to expiration'] = tx_height + bitcoin.EXPIRATION_BLOCKS - local_height
+                    claims.append(output)
+        return claims
+
     def get_label(self, tx_hash):
         label = self.labels.get(tx_hash, '')
         if label is '':
@@ -925,10 +975,12 @@ class Abstract_Wallet(PrintError):
         klass = COIN_CHOOSERS[self.coin_chooser_name(config)]
         return klass()
 
-    def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None):
+    def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None, abandon_txid=None):
         # check outputs
         for type, data, value in outputs:
-            if type == TYPE_ADDRESS:
+            if type & TYPE_CLAIM:
+                data = data[1]
+            if type & TYPE_ADDRESS:
                 assert is_address(data), "Address " + data + " is invalid!"
 
         # Avoid index-out-of-range with coins[0] below
@@ -972,7 +1024,7 @@ class Abstract_Wallet(PrintError):
         max_change = self.max_change_outputs if self.multiple_change else 1
         coin_chooser = self.coin_chooser(config)
         tx = coin_chooser.make_tx(coins, outputs, change_addrs[:max_change],
-                                  fee_estimator, dust_threshold)
+                                  fee_estimator, dust_threshold, abandon_txid=abandon_txid)
 
         # Sort the inputs and outputs deterministically
         tx.BIP_LI01_sort()

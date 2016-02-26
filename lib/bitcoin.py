@@ -34,10 +34,15 @@ RECOMMENDED_FEE = 50000
 COINBASE_MATURITY = 100
 COIN = 100000000
 
-# supported types of transction outputs
-TYPE_ADDRESS = 0
-TYPE_PUBKEY  = 1
-TYPE_SCRIPT  = 2
+# supported types of transaction outputs
+TYPE_ADDRESS = 1
+TYPE_PUBKEY  = 2
+TYPE_SCRIPT  = 4
+TYPE_CLAIM   = 8
+
+
+# claim related constants
+EXPIRATION_BLOCKS = 262974
 
 
 # AES encryption
