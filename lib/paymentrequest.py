@@ -44,7 +44,7 @@ import rsakey
 REQUEST_HEADERS = {'Accept': 'application/bitcoin-paymentrequest', 'User-Agent': 'Electrum'}
 ACK_HEADERS = {'Content-Type':'application/bitcoin-payment','Accept':'application/bitcoin-paymentack','User-Agent':'Electrum'}
 
-ca_path = requests.certs.where()
+ca_path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "cacert.pem")
 ca_list, ca_keyID = x509.load_certificates(ca_path)
 
 
