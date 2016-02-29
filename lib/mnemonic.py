@@ -22,6 +22,7 @@ import math
 import hashlib
 import unicodedata
 import string
+import sys
 
 import ecdsa
 import pbkdf2
@@ -104,7 +105,7 @@ class Mnemonic(object):
             lang = i18n.language.info().get('language', 'en')
         print_error('language', lang)
         filename = filenames.get(lang[0:2], 'english.txt')
-        path = os.path.join(os.path.dirname(__file__), 'wordlist', filename)
+        path = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 'wordlist', filename)
         s = open(path,'r').read().strip()
         s = unicodedata.normalize('NFKD', s.decode('utf8'))
         lines = s.split('\n')
