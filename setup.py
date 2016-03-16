@@ -36,7 +36,7 @@ setup(
         'pbkdf2',
         'requests',
         'qrcode',
-        'protobuf==3.0.0b2',
+        'protobuf<=3.0.0b2',
         'dnspython',
         'jsonrpclib',
     ],
