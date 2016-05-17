@@ -646,7 +646,7 @@ class Commands:
                                 decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
                                 n, value, rest = decode_claim_script(decoded_script)
                                 if n == name:
-                                    return {'value': value}
+                                    return {'value': value, 'txid': result['proof']['txhash']}
                                 return {'error': 'name in proof did not match requested name'}
                             return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                         return {'error': "computed txid did not match given transaction: %s vs %s" %
