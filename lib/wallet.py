@@ -656,11 +656,20 @@ class Abstract_Wallet(PrintError):
                         'prevout_hash':prevout_hash,
                         'height':tx_height,
                         'coinbase':is_cb,
-                        'is_claim': bool(txout[0] & TYPE_CLAIM)
+                        'is_claim': bool(txout[0] & TYPE_CLAIM),
+                        'is_support': bool(txout[0] & TYPE_SUPPORT),
+                        'is_update': bool(txout[0] & TYPE_UPDATE),
                     }
                     if txout[0] & TYPE_CLAIM:
                         output['claim_name'] = txout[1][0][0]
                         output['claim_value'] = txout[1][0][1]
+                    elif txout[0] & TYPE_SUPPORT:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_id'] = txout[1][0][1]
+                    elif txout[0] & TYPE_UPDATE:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_id'] = txout[1][0][1]
+                        output['claim_value'] = txout[1][0][2]
                     coins.append(output)
                 if abandon_txid is not None and prevout_hash == abandon_txid:
                     found_abandon_txid = True
@@ -910,13 +919,10 @@ class Abstract_Wallet(PrintError):
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
-                if txout[0] & TYPE_CLAIM:
-                    claim_name, claim_value = txout[1][0]
+                if txout[0] & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                     local_height = self.network.get_local_height()
                     expired = tx_height + bitcoin.EXPIRATION_BLOCKS <= local_height
                     output = {
-                        'name':  claim_name,
-                        'value': claim_value,
                         'txid': prevout_hash,
                         'address': addr,
                         'category': "name",
@@ -927,6 +933,19 @@ class Abstract_Wallet(PrintError):
                         'confirmations': local_height - tx_height,
                         'is spent': txo in txis,
                     }
+                    if txout[0] & TYPE_CLAIM:
+                        claim_name, claim_value = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_value
+                    elif txout[0] & TYPE_SUPPORT:
+                        claim_name, claim_id = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_id
+                    elif txout[0] & TYPE_UPDATE:
+                        claim_name, claim_id, claim_value = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_value
+                        output['claim_id'] = claim_id
                     if not expired:
                         output['blocks to expiration'] = tx_height + bitcoin.EXPIRATION_BLOCKS - local_height
                     claims.append(output)
@@ -978,7 +997,7 @@ class Abstract_Wallet(PrintError):
     def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None, abandon_txid=None):
         # check outputs
         for type, data, value in outputs:
-            if type & TYPE_CLAIM:
+            if type & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                 data = data[1]
             if type & TYPE_ADDRESS:
                 assert is_address(data), "Address " + data + " is invalid!"

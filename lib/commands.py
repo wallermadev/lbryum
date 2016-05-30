@@ -31,7 +31,8 @@ from decimal import Decimal
 import util
 from util import print_msg, format_satoshis, print_stderr
 import bitcoin
-from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash, TYPE_CLAIM
+from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
+from bitcoin import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE
 from transaction import Transaction
 from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
 import paymentrequest
@@ -389,7 +390,7 @@ class Commands:
         return bitcoin.verify_message(address, sig, message)
 
     def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned, claim_name=None, claim_val=None,
-              abandon_txid=None):
+              abandon_txid=None, claim_id=None):
         self.nocheck = nocheck
         change_addr = self._resolver(change_addr)
         domain = None if domain is None else map(self._resolver, domain)
@@ -414,7 +415,15 @@ class Commands:
                 amount = int(COIN*Decimal(amount))
             txout_type = TYPE_ADDRESS
             val = address
-            if claim_name is not None and claim_val is not None:
+            if claim_name is not None and claim_val is not None and claim_id is not None and abandon_txid is not None:
+                assert len(outputs) == 1
+                txout_type |= TYPE_UPDATE
+                val = ((claim_name, claim_val, claim_id), val)
+            elif claim_name is not None and claim_id is not None:
+                assert len(outputs) == 1
+                txout_type |= TYPE_SUPPORT
+                val = ((claim_name, claim_id), val)
+            elif claim_name is not None and claim_val is not None:
                 assert len(outputs) == 1
                 txout_type |= TYPE_CLAIM
                 val = ((claim_name, claim_val), val)
@@ -689,6 +698,23 @@ class Commands:
                         claim_name=name, claim_val=val)
         return tx.as_dict()
 
+    @command('wp')
+    def supportclaim(self, destination, amount, name, claim_id, tx_fee=None, from_addr=None,
+                     change_addr=None, nocheck=False, unsigned=False):
+        """Support a claim"""
+        domain = [from_addr] if from_addr else None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned,
+                        claim_name=name, claim_id=claim_id)
+        return tx.as_dict()
+
+    @command('wp')
+    def updateclaim(self, txid, destination, amount, name, claim_id, val, tx_fee=None,
+                    change_addr=None, nocheck=False, unsigned=False):
+        """Update a claim"""
+        domain = None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned,
+                        claim_name=name, claim_id=claim_id, claim_val=val, abandon_txid=txid)
+        return tx.as_dict()
 
     @command('wp')
     def abandonclaim(self, txid, destination, amount, tx_fee=None, change_addr=None,

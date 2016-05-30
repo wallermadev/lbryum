@@ -7,10 +7,13 @@ class InvalidProofError(Exception):
     pass
 
 
-def get_hash_for_outpoint(txhash, nOut):
+def get_hash_for_outpoint(txhash, nOut, nHeightOfLastTakeover):
     txhash_hash = Hash(txhash)
     nOut_hash = Hash(str(nOut))
-    outPointHash = Hash(txhash_hash + nOut_hash)
+    height_of_last_takeover_hash = Hash(str(nHeightOfLastTakeover))
+    outPointHash = Hash(
+        txhash_hash + nOut_hash + height_of_last_takeover_hash
+    )
     return outPointHash
 
 
@@ -24,9 +27,13 @@ def verify_proof(proof, rootHash, name):
         previous_child_character = None
         for child in node['children']:
             if child['character'] < 0 or child['character'] > 255:
-                raise InvalidProofError("child character not int between 0 and 255")
+                raise InvalidProofError(
+                    "child character not int between 0 and 255"
+                )
             if previous_child_character is not None and previous_child_character > child['character']:
-                raise InvalidProofError("children not in increasing order")
+                raise InvalidProofError(
+                    "children not in increasing order"
+                )
             previous_child_character = child['character']
             to_hash += chr(child['character'])
             if 'nodeHash' in child:
@@ -43,10 +50,24 @@ def verify_proof(proof, rootHash, name):
                 to_hash += previous_computed_hash
         if found_child_in_chain is False and i != 0:
             raise InvalidProofError("did not find a the alleged child")
-        if i == 0 and 'txhash' in proof and 'nOut' in proof:
-            if len(proof['txhash']) != 64 or not isinstance(proof['nOut'], (long, int)):
-                raise InvalidProofError("txhash was invalid or nOut was invalid")
-            to_hash += get_hash_for_outpoint(binascii.unhexlify(proof['txhash'])[::-1], proof['nOut'])
+        if i == 0 and 'txhash' in proof and 'nOut' in proof and 'nHeightOfLastTakeover' in proof:
+            if len(proof['txhash']) != 64:
+                raise InvalidProofError(
+                    "txhash was invalid: {}".format(proof['txhash'])
+                )
+            elif not isinstance(proof['nOut'], (long, int)):
+                raise InvalidProofError(
+                    "nOut was invalid: {}".format(proof['nOut'])
+                )
+            elif not isinstance(proof['last takeover height'], (long, int)):
+                raise InvalidProofError(
+                    'last takeover height was invalid: '
+                    '{}'.format(proof['last takeover height'])
+                )
+            to_hash += get_hash_for_outpoint(
+                binascii.unhexlify(proof['txhash'])[::-1],
+                proof['nOut'],
+                proof['last takeover height'])
             verified_value = True
         elif 'valueHash' in node:
             if len(node['valueHash']) != 64:

@@ -39,6 +39,8 @@ TYPE_ADDRESS = 1
 TYPE_PUBKEY  = 2
 TYPE_SCRIPT  = 4
 TYPE_CLAIM   = 8
+TYPE_SUPPORT = 16
+TYPE_UPDATE  = 32
 
 
 # claim related constants
