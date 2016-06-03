@@ -8,7 +8,25 @@ import traceback
 import urlparse
 import urllib
 import threading
+import logging
+import logging.handlers
+from appdirs import user_data_dir
 from i18n import _
+
+if sys.platform != "darwin":
+    log_dir = os.path.join(os.path.expanduser("~"), ".lbrynet")
+else:
+    log_dir = user_data_dir("LBRY")
+
+if not os.path.isdir(log_dir):
+    os.mkdir(log_dir)
+
+LOG_FILENAME = os.path.join(log_dir, 'lbrynet-daemon.log')
+
+log = logging.getLogger(__name__)
+handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=2097152, backupCount=5)
+log.addHandler(handler)
+log.setLevel(logging.INFO)
 
 base_units = {'BTC':8, 'mBTC':5, 'uBTC':2}
 
@@ -38,9 +56,11 @@ class PrintError(object):
         return self.__class__.__name__
 
     def print_error(self, *msg):
+        log.info(" ".join([str(m) for m in list(msg)]))
         print_error("[%s]" % self.diagnostic_name(), *msg)
 
     def print_msg(self, *msg):
+        log.info(" ".join([str(m) for m in list(msg)]))
         print_msg("[%s]" % self.diagnostic_name(), *msg)
 
 class ThreadJob(PrintError):
