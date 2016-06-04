@@ -21,11 +21,10 @@ else:
 if not os.path.isdir(log_dir):
     os.mkdir(log_dir)
 
-LOG_FILENAME = os.path.join(log_dir, 'lbrynet-daemon.log')
+LOG_PATH = os.path.join(log_dir, 'lbryum.log')
 
-log = logging.getLogger(__name__)
-handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=2097152, backupCount=5)
-log.addHandler(handler)
+log = logging.getLogger("lbryum")
+log.addHandler(logging.FileHandler(filename=LOG_PATH))
 log.setLevel(logging.INFO)
 
 base_units = {'BTC':8, 'mBTC':5, 'uBTC':2}
@@ -56,11 +55,11 @@ class PrintError(object):
         return self.__class__.__name__
 
     def print_error(self, *msg):
-        log.info(" ".join([str(m) for m in list(msg)]))
+        log.info("[%s] " % str(datetime.now()) + " ".join([str(m) for m in list(msg)]))
         print_error("[%s]" % self.diagnostic_name(), *msg)
 
     def print_msg(self, *msg):
-        log.info(" ".join([str(m) for m in list(msg)]))
+        log.info("[%s] " % str(datetime.now()) + " ".join([str(m) for m in list(msg)]))
         print_msg("[%s]" % self.diagnostic_name(), *msg)
 
 class ThreadJob(PrintError):
