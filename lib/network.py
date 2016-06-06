@@ -12,12 +12,15 @@ from threading import Lock
 import socks
 import socket
 import json
+import logging
 
 import util
 from bitcoin import *
 from interface import Connection, Interface
 from blockchain import Blockchain, BLOCKS_PER_CHUNK
 from version import ELECTRUM_VERSION, PROTOCOL_VERSION
+
+log = logging.getLogger("lbryum")
 
 DEFAULT_PORTS = {'t': '50001', 's': '50002', 'h': '8081', 'g': '8082'}
 
@@ -36,6 +39,7 @@ for host in DEFAULT_SERVERS:
     result = sock.connect_ex((ip, int(DEFAULT_SERVERS[host]['t'])))
     sock.close()
     if result == 0:
+        log.info("%s:%s is online" % (host, DEFAULT_SERVERS[host]['t']))
         ONLINE_SERVERS[host] = DEFAULT_SERVERS[host]
 
 NODES_RETRY_INTERVAL = 60

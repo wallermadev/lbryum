@@ -9,23 +9,9 @@ import urlparse
 import urllib
 import threading
 import logging
-import logging.handlers
-from appdirs import user_data_dir
 from i18n import _
 
-if sys.platform != "darwin":
-    log_dir = os.path.join(os.path.expanduser("~"), ".lbrynet")
-else:
-    log_dir = user_data_dir("LBRY")
-
-if not os.path.isdir(log_dir):
-    os.mkdir(log_dir)
-
-LOG_PATH = os.path.join(log_dir, 'lbryum.log')
-
 log = logging.getLogger("lbryum")
-log.addHandler(logging.FileHandler(filename=LOG_PATH))
-log.setLevel(logging.INFO)
 
 base_units = {'BTC':8, 'mBTC':5, 'uBTC':2}
 
