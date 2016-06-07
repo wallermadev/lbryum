@@ -26,7 +26,7 @@ MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 HEADER_SIZE = 112
 
 
-BLOCKS_PER_CHUNK = 720
+BLOCKS_PER_CHUNK = 96#720
 
 
 class Blockchain(util.PrintError):
@@ -34,7 +34,7 @@ class Blockchain(util.PrintError):
     def __init__(self, config, network):
         self.config = config
         self.network = network
-        self.headers_url = "http://seeddata.lbrycrd.lbry.io/blockchain_headers"
+        self.headers_url = "http://127.0.0.1/stuff.omg"#"http://seeddata.lbrycrd.lbry.io/blockchain_headers"
         self.local_height = 0
         self.set_local_height()
         self.retrieving_headers = False
@@ -181,7 +181,7 @@ class Blockchain(util.PrintError):
         target = bitsBase << (8 * (bitsN-3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 30 * 60 * 12#14 * 24 * 60 * 60
+        nTargetTimespan = 150 * 24 * 2 #30 * 60 * 12#14 * 24 * 60 * 60
         nActualTimespan = max(nActualTimespan, nTargetTimespan / 4)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
         new_target = target*nActualTimespan
