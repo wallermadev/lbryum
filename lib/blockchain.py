@@ -51,8 +51,8 @@ class Blockchain(util.PrintError):
         prev_hash = self.hash_header(prev_header)
         assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash'))
         assert bits == header.get('bits'), "bits mismatch: %s vs %s (hash: %s)" % (bits, header.get('bits'), self.hash_header(header))
-        _hash = self.hash_header(header)
-        assert int('0x' + _hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _hash, 16), target)
+        _pow_hash = self.pow_hash_header(header)
+        assert int('0x' + _pow_hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _pow_hash, 16), target)
 
     def verify_chain(self, chain):
         first_header = chain[0]
@@ -101,6 +101,11 @@ class Blockchain(util.PrintError):
         if header is None:
             return '0' * 64
         return hash_encode(Hash(self.serialize_header(header).decode('hex')))
+
+    def pow_hash_header(self, header):
+        if header is None:
+            return '0' * 64
+        return hash_encode(PoWHash(self.serialize_header(header).decode('hex')))
 
     def path(self):
         return os.path.join(self.config.path, 'blockchain_headers')
