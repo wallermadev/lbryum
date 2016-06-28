@@ -29,7 +29,7 @@ if False and platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
 
 setup(
     name="lbryum",
-    version=version.ELECTRUM_VERSION,
+    version=version.LBRYUM_VERSION,
     install_requires=[
         'slowaes>=0.1a1',
         'ecdsa>=0.9',

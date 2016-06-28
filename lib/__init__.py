@@ -1,4 +1,4 @@
-from version import ELECTRUM_VERSION
+from version import LBRYUM_VERSION
 from util import format_satoshis, print_msg, print_error, set_verbosity
 from wallet import Synchronizer, WalletStorage, Wallet, Imported_Wallet
 from coinchooser import COIN_CHOOSERS

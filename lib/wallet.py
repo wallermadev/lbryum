@@ -157,7 +157,7 @@ class Abstract_Wallet(PrintError):
     def __init__(self, storage):
         self.storage = storage
         self.network = None
-        self.electrum_version = ELECTRUM_VERSION
+        self.electrum_version = LBRYUM_VERSION
         self.gap_limit_for_change = 6 # constant
         # saved fields
         self.seed_version          = storage.get('seed_version', NEW_SEED_VERSION)
