@@ -34,7 +34,7 @@ class Blockchain(util.PrintError):
     def __init__(self, config, network):
         self.config = config
         self.network = network
-        self.headers_url = "http://127.0.0.1/stuff.omg"#"http://seeddata.lbrycrd.lbry.io/blockchain_headers"
+        self.headers_url = "http://s3.amazonaws.com/files.lbry.io/blockchain_headers"
         self.local_height = 0
         self.set_local_height()
         self.retrieving_headers = False
