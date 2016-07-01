@@ -22,7 +22,7 @@ from version import LBRYUM_VERSION, PROTOCOL_VERSION
 DEFAULT_PORTS = {'t':'50001', 's':'50002', 'h':'8081', 'g':'8082'}
 
 DEFAULT_SERVERS = {
-    '45.63.4.203':{'t':'50001'},
+    '45.63.4.203': {'t': '50001'},
     #'lbryum1.lbry.io':{'t':'50001'},
     #'lbryum2.lbry.io':{'t':'50001'},
     #'lbryum3.lbry.io':{'t':'50001'},
@@ -702,7 +702,7 @@ class Network(util.DaemonThread):
                         self.notify('updated')
                     else:
                         interface.print_error("header didn't connect, dismissing interface")
-                        interface.stop()
+                        interface.close()
                 else:
                     self.request_header(interface, data, next_height)
 
