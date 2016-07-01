@@ -80,7 +80,7 @@ class TestNewWallet(WalletTestCase):
         super(TestNewWallet, self).setUp()
         self.storage = WalletStorage(self.wallet_path)
         self.wallet = NewWallet(self.storage)
-        # This cannot be constructed by electrum at random, it should be safe
+        # This cannot be constructed by lbryum at random, it should be safe
         # from eventual collisions.
         self.wallet.add_seed(self.seed_text, self.password)
         self.wallet.create_master_keys(self.password)

@@ -23,7 +23,7 @@ if False and platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
         else:
             usr_share = os.path.expanduser('~/.local/share')
     data_files += [
-        (os.path.join(usr_share, 'applications/'), ['electrum.desktop']),
+        (os.path.join(usr_share, 'applications/'), ['lbryum.desktop']),
         (os.path.join(usr_share, 'pixmaps/'), ['icons/electrum.png'])
     ]
 
@@ -67,10 +67,10 @@ setup(
         'lbryum': [
             'www/index.html',
             'wordlist/*.txt',
-            'locale/*/LC_MESSAGES/electrum.mo',
+            'locale/*/LC_MESSAGES/lbryum.mo',
         ]
     },
-    #scripts=['electrum'],
+    #scripts=['lbryum'],
     data_files=data_files,
     description="Lightweight LBRYcrd Wallet",
     author="LBRY",

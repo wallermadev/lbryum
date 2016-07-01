@@ -152,7 +152,7 @@ class Synchronizer(ThreadJob):
         we don't have.
         '''
         for history in self.wallet.history.values():
-            # Old electrum servers returned ['*'] when all history for
+            # Old lbryum servers returned ['*'] when all history for
             # the address was pruned.  This no longer happens but may
             # remain in old wallets.
             if history == ['*']:

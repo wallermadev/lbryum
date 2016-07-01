@@ -187,7 +187,7 @@ def init_cmdline(config_options):
 
     if cmd.requires_wallet and not storage.file_exists:
         print_msg("Error: Wallet file not found.")
-        print_msg("Type 'electrum create' to create a new wallet, or provide a path to a wallet with the -w option")
+        print_msg("Type 'lbryum create' to create a new wallet, or provide a path to a wallet with the -w option")
         sys.exit(0)
 
     # important warning
@@ -365,7 +365,7 @@ if __name__ == '__main__':
                     print_stderr("starting daemon (PID %d)"%p)
                     sys.exit(0)
             else:
-                print_msg("syntax: electrum daemon <start|status|stop>")
+                print_msg("syntax: lbryum daemon <start|status|stop>")
                 sys.exit(1)
 
     else:
@@ -376,7 +376,7 @@ if __name__ == '__main__':
         else:
             cmd = known_commands[cmdname]
             if cmd.requires_network:
-                print_msg("Network daemon is not running. Try 'electrum daemon start'")
+                print_msg("Network daemon is not running. Try 'lbryum daemon start'")
                 sys.exit(1)
             else:
                 result = run_offline_command(config, config_options)

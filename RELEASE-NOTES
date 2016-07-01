@@ -426,7 +426,7 @@ https://bitcointalk.org/index.php?topic=144575.0
 * It is possible to create, sign and redeem multisig transaction using the
 command line interface.  This is made possible by the following new commands:
     dumpprivkey, listunspent, createmultisig, createrawtransaction, decoderawtransaction, signrawtransaction
-The syntax of these commands is similar to their bitcoind counterpart.
+The syntax of these commands is similar to their lbrycrdd counterpart.
 For an example, see Gavin's tutorial: https://gist.github.com/gavinandresen/3966071
 
 * Offline wallets now work in a way similar to Armory:
@@ -435,7 +435,7 @@ For an example, see Gavin's tutorial: https://gist.github.com/gavinandresen/3966
   3. signed transaction is copied to the online computer, broadcasted by the online client.
   4. All these steps can be done via the command line interface or the classic GUI.
 
-* Many command line commands have been renamed in order to make the syntax consistent with bitcoind.
+* Many command line commands have been renamed in order to make the syntax consistent with lbrycrdd.
 
 # Release 1.6.2
 
