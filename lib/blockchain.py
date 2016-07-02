@@ -219,7 +219,7 @@ class Blockchain(util.PrintError):
             return previous_height
 
         # Does it connect to my chain?
-        prev_hash = self.hash_header(previous_header)
+        prev_hash = self.pow_hash_header(previous_header)
         if prev_hash != header.get('prev_block_hash'):
             self.print_error("reorg")
             return previous_height
