@@ -225,6 +225,7 @@ def i2o_ECPublicKey(pubkey, compressed=False):
 
 ############ functions from pywallet #####################
 
+
 def hash_160(public_key):
     try:
         md = hashlib.new('ripemd160')
@@ -241,15 +242,30 @@ def public_key_to_bc_address(public_key):
     h160 = hash_160(public_key)
     return hash_160_to_bc_address(h160)
 
-def hash_160_to_bc_address(h160, addrtype = 0):
-    vh160 = chr(addrtype) + h160
+
+#lbrycrd/src/chainparams.cpp line 176
+PUBKEY_ADDRESS = (0, 85)
+SCRIPT_ADDRESS = (5, 122)
+
+
+def hash_160_to_bc_address(h160, addrtype=0):
+    if addrtype == PUBKEY_ADDRESS[0]:
+        c = chr(PUBKEY_ADDRESS[1])
+    elif addrtype == SCRIPT_ADDRESS[0]:
+        c = chr(SCRIPT_ADDRESS[1])
+
+    vh160 = c + h160
     h = Hash(vh160)
     addr = vh160 + h[0:4]
     return base_encode(addr, base=58)
 
+
 def bc_address_to_hash_160(addr):
     bytes = base_decode(addr, 25, base=58)
-    return ord(bytes[0]), bytes[1:21]
+    if bytes[0] == chr(PUBKEY_ADDRESS[1]):
+        return PUBKEY_ADDRESS[0], bytes[1:21]
+    elif bytes[0] == chr(SCRIPT_ADDRESS[1]):
+        return SCRIPT_ADDRESS[0], bytes[1:21]
 
 
 __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
