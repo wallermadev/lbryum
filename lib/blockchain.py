@@ -23,10 +23,10 @@ from bitcoin import *
 
 MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
-HEADER_SIZE = 116
+HEADER_SIZE = 112
 
 
-BLOCKS_PER_CHUNK = 96 #720
+BLOCKS_PER_CHUNK = 96#720
 
 
 class Blockchain(util.PrintError):
@@ -81,7 +81,6 @@ class Blockchain(util.PrintError):
             + rev_hex(res.get('merkle_root')) \
             + rev_hex(res.get('claim_trie_root')) \
             + int_to_hex(int(res.get('timestamp')), 4) \
-            + int_to_hex(int(res.get('mediantime')), 4) \
             + int_to_hex(int(res.get('bits')), 4) \
             + int_to_hex(int(res.get('nonce')), 4)
         return s
@@ -94,9 +93,8 @@ class Blockchain(util.PrintError):
         h['merkle_root'] = hash_encode(s[36:68])
         h['claim_trie_root'] = hash_encode(s[68:100])
         h['timestamp'] = hex_to_int(s[100:104])
-        h['mediantime'] = hex_to_int(s[104:108])
-        h['bits'] = hex_to_int(s[108:112])
-        h['nonce'] = hex_to_int(s[112:116])
+        h['bits'] = hex_to_int(s[104:108])
+        h['nonce'] = hex_to_int(s[108:112])
         return h
 
     def hash_header(self, header):
