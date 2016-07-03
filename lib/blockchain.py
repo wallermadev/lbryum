@@ -56,23 +56,28 @@ class Blockchain(util.PrintError):
 
     def verify_chain(self, chain):
         first_header = chain[0]
-        prev_header = self.read_header(first_header.get('block_height') - 1)
+        height = first_header['block_height']
+        print_error("First header", first_header)
+        prev_header = self.read_header(height - 1)
+        print_error("Prev header", prev_header)
         for header in chain:
-            height = header.get('block_height')
-            bits, target = self.get_target(height / BLOCKS_PER_CHUNK, chain)
-            self.verify_header(header, prev_header, bits, target)
+            height = header['block_height']
+            if self.read_header(height) is not None:
+                print_error("Height: ", height)
+                bits, target = self.get_target(height, chain, header=header)
+                self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
     def verify_chunk(self, index, data):
-        num = len(data) / HEADER_SIZE
         prev_header = None
         if index != 0:
             prev_header = self.read_header(index*BLOCKS_PER_CHUNK - 1)
-        bits, target = self.get_target(index)
-        for i in range(num):
+        for i in range(BLOCKS_PER_CHUNK):
+            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i)
             raw_header = data[i*HEADER_SIZE:(i+1) * HEADER_SIZE]
             header = self.deserialize_header(raw_header)
-            self.verify_header(header, prev_header, bits, target)
+            if header is not None:
+                self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
     def serialize_header(self, res):
@@ -83,7 +88,9 @@ class Blockchain(util.PrintError):
             + int_to_hex(int(res.get('timestamp')), 4) \
             + int_to_hex(int(res.get('bits')), 4) \
             + int_to_hex(int(res.get('nonce')), 4)
+
         return s
+
 
     def deserialize_header(self, s):
         hex_to_int = lambda s: int('0x' + s[::-1].encode('hex'), 16)
@@ -140,7 +147,7 @@ class Blockchain(util.PrintError):
 
     def save_header(self, header):
         data = self.serialize_header(header).decode('hex')
-        assert len(data) == HEADER_SIZE
+        assert len(data) == HEADER_SIZE; "Header is wrong size"
         height = header.get('block_height')
         filename = self.path()
         f = open(filename, 'rb+')
@@ -167,32 +174,32 @@ class Blockchain(util.PrintError):
                 h = self.deserialize_header(h)
                 return h
 
-    def get_target(self, index, chain=None):
+    def get_target(self, index, chain=None, header=None):
+        # print_error("Get target for block ", index)
         if index == 0:
             return 0x1f00ffff, MAX_TARGET
-        first = self.read_header((index-1) * BLOCKS_PER_CHUNK)
-        last = self.read_header(index*BLOCKS_PER_CHUNK - 1)
-        if last is None:
-            for h in chain:
-                if h.get('block_height') == index*BLOCKS_PER_CHUNK - 1:
-                    last = h
-        assert last is not None
+        first = self.read_header(index - 1)
+        last = self.read_header(index) if header is None else header
+        assert last is not None, "Last shouldn't be none"
         # bits to target
         bits = last.get('bits')
+        # print_error("Last bits: ", bits)
         bitsN = (bits >> 24) & 0xff
         assert bitsN >= 0x03 and bitsN <= 0x1f, "First part of bits should be in [0x03, 0x1d]"
         bitsBase = bits & 0xffffff
         assert bitsBase >= 0x8000 and bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
-        target = bitsBase << (8 * (bitsN-3))
+        target = bitsBase << (8 * (bitsN - 3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 150 * 24 * 2 #30 * 60 * 12#14 * 24 * 60 * 60
-        nActualTimespan = max(nActualTimespan, nTargetTimespan / 4)
-        nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
-        new_target = target*nActualTimespan
-        while new_target >= 2**256:
-            new_target -= 2**256
-        new_target = new_target / nTargetTimespan
+        nTargetTimespan = 150
+        nModulatedTimespan = nTargetTimespan - (nActualTimespan - nTargetTimespan) / 8
+        nMinTimespan = nTargetTimespan - (nTargetTimespan / 8)
+        nMaxTimespan = nTargetTimespan + (nTargetTimespan / 2)
+        nModulatedTimespan = nMinTimespan if nModulatedTimespan < nMinTimespan else nMaxTimespan
+        new_target = target * nModulatedTimespan
+        while new_target >= 2 ** 256:
+            new_target -= 2 ** 256
+        new_target = new_target / nModulatedTimespan
         new_target = min(MAX_TARGET, new_target)
         # convert new target to bits
         c = ("%064x" % new_target)
@@ -204,7 +211,8 @@ class Blockchain(util.PrintError):
             bitsN += 1
             bitsBase >>= 8
         new_bits = bitsN << 24 | bitsBase
-        return new_bits, bitsBase << (8 * (bitsN-3))
+        # print_error("Calculated bits: ", new_bits)
+        return new_bits, bitsBase << (8 * (bitsN - 3))
 
     def connect_header(self, chain, header):
         '''Builds a header chain until it connects.  Returns True if it has
@@ -216,13 +224,16 @@ class Blockchain(util.PrintError):
 
         # Missing header, request it
         if not previous_header:
+            self.print_error("Missing header, requesting it")
             return previous_height
 
         # Does it connect to my chain?
-        prev_hash = self.pow_hash_header(previous_header)
+        prev_hash = self.hash_header(previous_header)
         if prev_hash != header.get('prev_block_hash'):
             self.print_error("reorg")
             return previous_height
+
+        print_error("Trying to connect to the chain...")
 
         # The chain is complete.  Reverse to order by increasing height
         chain.reverse()

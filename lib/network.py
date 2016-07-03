@@ -737,7 +737,7 @@ class Network(util.DaemonThread):
         rin = [i for i in self.interfaces.values()]
         win = [i for i in self.interfaces.values() if i.unsent_requests]
         try:
-            rout, wout, xout = select.select(rin, win, [], 0.1)
+            rout, wout, xout = select.select(rin, win, [], 0.2)
         except socket.error as (code, msg):
             if code == errno.EINTR:
                 return
