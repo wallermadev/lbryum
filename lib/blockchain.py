@@ -62,7 +62,7 @@ class Blockchain(util.PrintError):
             height = header['block_height']
             if self.read_header(height) is not None:
                 print_error("Height: ", height)
-                bits, target = self.get_target(height, chain)
+                bits, target = self.get_target(height, header)
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
@@ -72,9 +72,9 @@ class Blockchain(util.PrintError):
         if index != 0:
             prev_header = self.read_header(index*BLOCKS_PER_CHUNK - 1)
         for i in range(BLOCKS_PER_CHUNK):
-            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i)
             raw_header = data[i*HEADER_SIZE:(i+1) * HEADER_SIZE]
             header = self.deserialize_header(raw_header)
+            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, header)
             if header is not None:
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
@@ -173,12 +173,12 @@ class Blockchain(util.PrintError):
                 h = self.deserialize_header(h)
                 return h
 
-    def get_target(self, index, chain=None):
+    def get_target(self, index, header):
         # print_error("Get target for block ", index)
         if index == 0:
             return 0x1f00ffff, MAX_TARGET
         first = self.read_header(index - 1)
-        last = self.read_header(index) if chain is None else chain[0]
+        last = header
         assert last is not None, "Last shouldn't be none"
         # bits to target
         bits = last.get('bits')
