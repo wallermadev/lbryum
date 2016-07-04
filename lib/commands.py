@@ -326,7 +326,7 @@ class Commands:
     def version(self):
         """Return the version of electrum."""
         import lbryum  # Needs to stay here to prevent ciruclar imports
-        return lbryum.ELECTRUM_VERSION
+        return lbryum.LBRYUM_VERSION
 
     @command('w')
     def getmpk(self):

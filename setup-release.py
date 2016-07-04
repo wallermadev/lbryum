@@ -15,7 +15,7 @@ import shutil
 import sys
 
 from lib.util import print_error
-from lib.version import ELECTRUM_VERSION as version
+from lib.version import LBRYUM_VERSION as version
 
 
 name = "Electrum"

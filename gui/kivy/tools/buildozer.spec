@@ -26,7 +26,7 @@ source.exclude_dirs = bin, build, contrib, gui/android, gui/gtk, gui/qt, gui/kiv
 #source.exclude_patterns = license,images/*/*.jpg
 
 # (str) Application versioning (method 1)
-version.regex = ELECTRUM_VERSION = '(.*)'
+version.regex = LBRYUM_VERSION = '(.*)'
 version.filename = %(source.dir)s/lib/version.py
 
 # (str) Application versioning (method 2)

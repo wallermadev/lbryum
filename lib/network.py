@@ -18,7 +18,7 @@ import util
 from bitcoin import *
 from interface import Connection, Interface
 from blockchain import Blockchain, BLOCKS_PER_CHUNK
-from version import ELECTRUM_VERSION, PROTOCOL_VERSION
+from version import LBRYUM_VERSION, PROTOCOL_VERSION
 
 log = logging.getLogger("lbryum")
 
@@ -632,7 +632,7 @@ class Network(util.DaemonThread):
             if interface.has_timed_out():
                 self.connection_down(interface.server)
             elif interface.ping_required():
-                params = [ELECTRUM_VERSION, PROTOCOL_VERSION]
+                params = [LBRYUM_VERSION, PROTOCOL_VERSION]
                 self.queue_request('server.version', params, interface)
 
         now = time.time()
