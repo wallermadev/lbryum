@@ -57,16 +57,15 @@ class Blockchain(util.PrintError):
     def verify_chain(self, chain):
         first_header = chain[0]
         height = first_header['block_height']
-        print_error("First header", first_header)
         prev_header = self.read_header(height - 1)
-        print_error("Prev header", prev_header)
         for header in chain:
             height = header['block_height']
             if self.read_header(height) is not None:
                 print_error("Height: ", height)
-                bits, target = self.get_target(height, chain, header=header)
+                bits, target = self.get_target(height, chain)
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
+
 
     def verify_chunk(self, index, data):
         prev_header = None
@@ -174,12 +173,12 @@ class Blockchain(util.PrintError):
                 h = self.deserialize_header(h)
                 return h
 
-    def get_target(self, index, chain=None, header=None):
+    def get_target(self, index, chain=None):
         # print_error("Get target for block ", index)
         if index == 0:
             return 0x1f00ffff, MAX_TARGET
         first = self.read_header(index - 1)
-        last = self.read_header(index) if header is None else header
+        last = self.read_header(index) if chain is None else chain[0]
         assert last is not None, "Last shouldn't be none"
         # bits to target
         bits = last.get('bits')
@@ -224,7 +223,6 @@ class Blockchain(util.PrintError):
 
         # Missing header, request it
         if not previous_header:
-            self.print_error("Missing header, requesting it")
             return previous_height
 
         # Does it connect to my chain?
@@ -232,8 +230,6 @@ class Blockchain(util.PrintError):
         if prev_hash != header.get('prev_block_hash'):
             self.print_error("reorg")
             return previous_height
-
-        print_error("Trying to connect to the chain...")
 
         # The chain is complete.  Reverse to order by increasing height
         chain.reverse()

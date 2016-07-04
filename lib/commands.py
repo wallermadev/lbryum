@@ -439,10 +439,17 @@ class Commands:
 
     @command('wp')
     def payto(self, destination, amount, tx_fee=None, from_addr=None, change_addr=None, nocheck=False, unsigned=False):
-        """Create a transaction. """
+        """Create a raw transaction. """
         domain = [from_addr] if from_addr else None
         tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned)
         return tx.as_dict()
+
+    @command('wpn')
+    def paytoandsend(self, destination, amount, tx_fee=None, from_addr=None, change_addr=None, nocheck=False, unsigned=False):
+        """Create and broadcast transaction. """
+        domain = [from_addr] if from_addr else None
+        tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned)
+        return self.network.synchronous_get(('blockchain.transaction.broadcast', [str(tx)]))
 
     @command('wp')
     def paytomany(self, outputs, tx_fee=None, from_addr=None, change_addr=None, nocheck=False, unsigned=False):
@@ -450,6 +457,13 @@ class Commands:
         domain = [from_addr] if from_addr else None
         tx = self._mktx(outputs, tx_fee, change_addr, domain, nocheck, unsigned)
         return tx.as_dict()
+
+    @command('wp')
+    def paytomanyandsend(self, outputs, tx_fee=None, from_addr=None, change_addr=None, nocheck=False, unsigned=False):
+        """Create and broadcast a multi-output transaction. """
+        domain = [from_addr] if from_addr else None
+        tx = self._mktx(outputs, tx_fee, change_addr, domain, nocheck, unsigned)
+        return self.network.synchronous_get(('blockchain.transaction.broadcast', [str(tx)]))
 
     @command('w')
     def history(self):
