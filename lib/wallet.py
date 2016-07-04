@@ -142,7 +142,6 @@ class WalletStorage(PrintError):
         if 'ANDROID_DATA' not in os.environ:
             import stat
             os.chmod(self.path, mode)
-        self.print_error("saved", self.path)
         self.modified = False
 
 
@@ -748,6 +747,7 @@ class Abstract_Wallet(PrintError):
                     return addr
 
     def add_transaction(self, tx_hash, tx):
+        print_error("Adding tx: ", tx_hash)
         is_coinbase = tx.inputs()[0].get('is_coinbase') == True
         with self.transaction_lock:
             # add inputs
@@ -799,6 +799,7 @@ class Abstract_Wallet(PrintError):
                     dd[addr].append((ser, v))
             # save
             self.transactions[tx_hash] = tx
+            print_error("Saved")
 
     def remove_transaction(self, tx_hash):
         with self.transaction_lock:
