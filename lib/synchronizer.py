@@ -72,16 +72,16 @@ class Synchronizer(ThreadJob):
             self.network.send(msgs, self.addr_subscription_response)
 
     def addr_subscription_response(self, response):
+
         params, result = self.parse_response(response)
         if not params:
             return
         addr = params[0]
         history = self.wallet.get_address_history(addr)
-        # if self.wallet.get_status(history) != result:
-        #     if self.requested_histories.get(addr) is None:
-
-        self.requested_histories[addr] = result
-        self.network.send([('blockchain.address.get_history', [addr])], self.addr_history_response)
+        if self.wallet.get_status(history) != result:
+            if self.requested_histories.get(addr) is None:
+                self.requested_histories[addr] = result
+                self.network.send([('blockchain.address.get_history', [addr])], self.addr_history_response)
 
         # remove addr from list only after it is added to requested_histories
         if addr in self.requested_addrs:  # Notifications won't be in
@@ -92,7 +92,7 @@ class Synchronizer(ThreadJob):
         if not params:
             return
         addr = params[0]
-        self.print_error("receiving history", addr, result)
+        # self.print_error("receiving history", addr, result)
         server_status = self.requested_histories[addr]
         hashes = set(map(lambda item: item['tx_hash'], result))
         hist = map(lambda item: (item['tx_hash'], item['height']), result)
