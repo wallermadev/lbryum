@@ -51,6 +51,7 @@ def verify_proof(proof, rootHash, name):
         if found_child_in_chain is False and i != 0:
             raise InvalidProofError("did not find a the alleged child")
         if i == 0 and 'txhash' in proof and 'nOut' in proof and 'nHeightOfLastTakeover' in proof:
+        if i == 0 and 'txhash' in proof and 'nOut' in proof and 'last takeover height' in proof:
             if len(proof['txhash']) != 64:
                 raise InvalidProofError(
                     "txhash was invalid: {}".format(proof['txhash'])
