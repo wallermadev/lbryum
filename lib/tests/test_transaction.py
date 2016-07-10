@@ -1,6 +1,6 @@
 import unittest
 from lib import transaction
-from lib.bitcoin import TYPE_ADDRESS
+from lib.lbrycrd import TYPE_ADDRESS
 
 import pprint
 

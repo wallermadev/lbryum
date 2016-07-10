@@ -20,7 +20,7 @@ from collections import defaultdict, namedtuple
 from math import floor, log10
 import struct
 
-from bitcoin import sha256, COIN, TYPE_ADDRESS
+from lbrycrd import sha256, COIN, TYPE_ADDRESS
 from transaction import Transaction
 from util import NotEnoughFunds, PrintError, profiler
 

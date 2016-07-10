@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import bitcoin
-from bitcoin import *
+import lbrycrd
+from lbrycrd import *
 from i18n import _
 from transaction import Transaction, is_extended_pubkey
 from util import print_msg, InvalidPassword
@@ -226,7 +226,7 @@ class OldAccount(Account):
         return _('Old Electrum format')
 
     def get_xpubkeys(self, for_change, n):
-        s = ''.join(map(lambda x: bitcoin.int_to_hex(x,2), (for_change, n)))
+        s = ''.join(map(lambda x: lbrycrd.int_to_hex(x, 2), (for_change, n)))
         mpk = self.mpk.encode('hex')
         x_pubkey = 'fe' + mpk + s
         return [ x_pubkey ]
@@ -239,7 +239,7 @@ class OldAccount(Account):
         dd = pk[128:]
         s = []
         while dd:
-            n = int(bitcoin.rev_hex(dd[0:4]), 16)
+            n = int(lbrycrd.rev_hex(dd[0:4]), 16)
             dd = dd[4:]
             s.append(n)
         assert len(s) == 2
@@ -312,20 +312,20 @@ class BIP32_Account(Account):
 
     def get_xpubkeys(self, for_change, n):
         # unsorted
-        s = ''.join(map(lambda x: bitcoin.int_to_hex(x,2), (for_change,n)))
+        s = ''.join(map(lambda x: lbrycrd.int_to_hex(x, 2), (for_change, n)))
         xpubs = self.get_master_pubkeys()
-        return map(lambda xpub: 'ff' + bitcoin.DecodeBase58Check(xpub).encode('hex') + s, xpubs)
+        return map(lambda xpub: 'ff' + lbrycrd.DecodeBase58Check(xpub).encode('hex') + s, xpubs)
 
     @classmethod
     def parse_xpubkey(self, pubkey):
         assert is_extended_pubkey(pubkey)
         pk = pubkey.decode('hex')
         pk = pk[1:]
-        xkey = bitcoin.EncodeBase58Check(pk[0:78])
+        xkey = lbrycrd.EncodeBase58Check(pk[0:78])
         dd = pk[78:]
         s = []
         while dd:
-            n = int( bitcoin.rev_hex(dd[0:2].encode('hex')), 16)
+            n = int(lbrycrd.rev_hex(dd[0:2].encode('hex')), 16)
             dd = dd[2:]
             s.append(n)
         assert len(s) == 2

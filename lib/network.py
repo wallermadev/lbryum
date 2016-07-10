@@ -14,7 +14,7 @@ import socket
 import json
 
 import util
-from bitcoin import *
+from lbrycrd import *
 from interface import Connection, Interface
 from blockchain import Blockchain, BLOCKS_PER_CHUNK
 from version import LBRYUM_VERSION, PROTOCOL_VERSION

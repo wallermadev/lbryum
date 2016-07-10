@@ -19,7 +19,7 @@
 
 from threading import Lock
 
-from bitcoin import Hash, hash_encode
+from lbrycrd import Hash, hash_encode
 from transaction import Transaction
 from util import print_error, print_msg, ThreadJob
 

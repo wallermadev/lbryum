@@ -5,7 +5,7 @@ from coinchooser import COIN_CHOOSERS
 from network import Network, DEFAULT_SERVERS, DEFAULT_PORTS, pick_random_server
 from interface import Connection, Interface
 from simple_config import SimpleConfig, get_config, set_config
-import bitcoin
+import lbrycrd
 import account
 import transaction
 from transaction import Transaction

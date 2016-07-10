@@ -20,8 +20,8 @@
 # Note: The deserialization code originally comes from ABE.
 
 
-import bitcoin
-from bitcoin import *
+import lbrycrd
+from lbrycrd import *
 from util import print_error, profiler
 import time
 import sys
@@ -933,7 +933,7 @@ class Transaction:
                     for_sig = Hash(self.tx_for_sig(i).decode('hex'))
                     pkey = regenerate_key(sec)
                     secexp = pkey.secret
-                    private_key = bitcoin.MySigningKey.from_secret_exponent( secexp, curve = SECP256k1 )
+                    private_key = lbrycrd.MySigningKey.from_secret_exponent(secexp, curve = SECP256k1)
                     public_key = private_key.get_verifying_key()
                     sig = private_key.sign_digest_deterministic( for_sig, hashfunc=hashlib.sha256, sigencode = ecdsa.util.sigencode_der )
                     assert public_key.verify_digest( sig, for_sig, sigdecode = ecdsa.util.sigdecode_der)

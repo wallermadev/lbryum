@@ -19,7 +19,7 @@
 
 import os
 import util
-from bitcoin import *
+from lbrycrd import *
 
 MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 

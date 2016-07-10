@@ -33,7 +33,7 @@ try:
 except ImportError:
     sys.exit("Error: could not find paymentrequest_pb2.py. Create it with 'protoc --proto_path=lib/ --python_out=lib/ lib/paymentrequest.proto'")
 
-import bitcoin
+import lbrycrd
 import util
 from util import print_error
 import transaction
@@ -84,7 +84,7 @@ class PaymentRequest:
         return self.raw
 
     def parse(self, r):
-        self.id = bitcoin.sha256(r)[0:16].encode('hex')
+        self.id = lbrycrd.sha256(r)[0:16].encode('hex')
         try:
             self.data = pb2.PaymentRequest()
             self.data.ParseFromString(r)
@@ -166,7 +166,7 @@ class PaymentRequest:
             address = info.get('address')
             pr.signature = ''
             message = pr.SerializeToString()
-            if bitcoin.verify_message(address, sig, message):
+            if lbrycrd.verify_message(address, sig, message):
                 self.error = 'Verified with DNSSEC'
                 return True
             else:
@@ -271,9 +271,9 @@ def sign_request_with_alias(pr, alias, alias_privkey):
     pr.pki_type = 'dnssec+btc'
     pr.pki_data = str(alias)
     message = pr.SerializeToString()
-    ec_key = bitcoin.regenerate_key(alias_privkey)
-    address = bitcoin.address_from_private_key(alias_privkey)
-    compressed = bitcoin.is_compressed(alias_privkey)
+    ec_key = lbrycrd.regenerate_key(alias_privkey)
+    address = lbrycrd.address_from_private_key(alias_privkey)
+    compressed = lbrycrd.is_compressed(alias_privkey)
     pr.signature = ec_key.sign_message(message, compressed, address)
 
 

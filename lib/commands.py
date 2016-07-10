@@ -30,9 +30,9 @@ from decimal import Decimal
 
 import util
 from util import print_msg, format_satoshis, print_stderr
-import bitcoin
-from bitcoin import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
-from bitcoin import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE
+import lbrycrd
+from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
+from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE
 from transaction import Transaction
 from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
 import paymentrequest
@@ -214,7 +214,7 @@ class Commands:
         """Sign a transaction. The wallet keys will be used unless a private key is provided."""
         t = Transaction(tx)
         if privkey:
-            pubkey = bitcoin.public_key_from_private_key(privkey)
+            pubkey = lbrycrd.public_key_from_private_key(privkey)
             t.sign({pubkey:privkey})
         else:
             self.wallet.sign_transaction(t, self._password)
@@ -387,7 +387,7 @@ class Commands:
     def verifymessage(self, address, signature, message):
         """Verify a signature."""
         sig = base64.b64decode(signature)
-        return bitcoin.verify_message(address, sig, message)
+        return lbrycrd.verify_message(address, sig, message)
 
     def _mktx(self, outputs, fee, change_addr, domain, nocheck, unsigned, claim_name=None, claim_val=None,
               abandon_txid=None, claim_id=None):
@@ -551,7 +551,7 @@ class Commands:
     @command('')
     def encrypt(self, pubkey, message):
         """Encrypt a message with a public key. Use quotes if the message contains whitespaces."""
-        return bitcoin.encrypt_message(message, pubkey)
+        return lbrycrd.encrypt_message(message, pubkey)
 
     @command('wp')
     def decrypt(self, pubkey, encrypted):
