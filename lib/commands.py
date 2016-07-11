@@ -671,7 +671,7 @@ class Commands:
                                 n, script = decode_claim_script(decoded_script)
                                 decoded_name, decoded_value = n.name, n.value
                                 if decoded_name == name:
-                                    return {'value': decoded_value}
+                                    return {'value': decoded_value, 'txid': result['proof']['txhash']}
                                 return {'error': 'name in proof did not match requested name'}
                             return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                         return {'error': "computed txid did not match given transaction: %s vs %s" %
