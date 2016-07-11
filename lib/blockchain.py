@@ -146,7 +146,7 @@ class Blockchain(util.PrintError):
 
     def save_header(self, header):
         data = self.serialize_header(header).decode('hex')
-        assert len(data) == HEADER_SIZE; "Header is wrong size"
+        assert len(data) == HEADER_SIZE, "Header is wrong size"
         height = header.get('block_height')
         filename = self.path()
         f = open(filename, 'rb+')
