@@ -22,15 +22,13 @@ import util
 from lbrycrd import *
 
 MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-
 HEADER_SIZE = 112
-
-
 BLOCKS_PER_CHUNK = 96
 
 
 class Blockchain(util.PrintError):
     '''Manages blockchain headers and their verification'''
+
     def __init__(self, config, network):
         self.config = config
         self.network = network
@@ -49,10 +47,13 @@ class Blockchain(util.PrintError):
 
     def verify_header(self, header, prev_header, bits, target):
         prev_hash = self.hash_header(prev_header)
-        assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash'))
-        assert bits == header.get('bits'), "bits mismatch: %s vs %s (hash: %s)" % (bits, header.get('bits'), self.hash_header(header))
+        assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (
+        prev_hash, header.get('prev_block_hash'))
+        assert bits == header.get('bits'), "bits mismatch: %s vs %s (hash: %s)" % (
+        bits, header.get('bits'), self.hash_header(header))
         _pow_hash = self.pow_hash_header(header)
-        assert int('0x' + _pow_hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (int('0x' + _pow_hash, 16), target)
+        assert int('0x' + _pow_hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (
+        int('0x' + _pow_hash, 16), target)
 
     def verify_chain(self, chain):
         first_header = chain[0]
@@ -66,13 +67,12 @@ class Blockchain(util.PrintError):
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
-
     def verify_chunk(self, index, data):
         prev_header = None
         if index != 0:
-            prev_header = self.read_header(index*BLOCKS_PER_CHUNK - 1)
+            prev_header = self.read_header(index * BLOCKS_PER_CHUNK - 1)
         for i in range(BLOCKS_PER_CHUNK):
-            raw_header = data[i*HEADER_SIZE:(i+1) * HEADER_SIZE]
+            raw_header = data[i * HEADER_SIZE:(i + 1) * HEADER_SIZE]
             header = self.deserialize_header(raw_header)
             bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header)
             if header is not None:
@@ -89,7 +89,6 @@ class Blockchain(util.PrintError):
             + int_to_hex(int(res.get('nonce')), 4)
 
         return s
-
 
     def deserialize_header(self, s):
         hex_to_int = lambda s: int('0x' + s[::-1].encode('hex'), 16)
@@ -158,7 +157,7 @@ class Blockchain(util.PrintError):
     def set_local_height(self):
         name = self.path()
         if os.path.exists(name):
-            h = os.path.getsize(name)/HEADER_SIZE - 1
+            h = os.path.getsize(name) / HEADER_SIZE - 1
             if self.local_height != h:
                 self.local_height = h
 
@@ -182,9 +181,9 @@ class Blockchain(util.PrintError):
         bits = last.get('bits')
         # print_error("Last bits: ", bits)
         bitsN = (bits >> 24) & 0xff
-        assert bitsN >= 0x03 and bitsN <= 0x1f, "First part of bits should be in [0x03, 0x1d]"
+        assert 0x03 <= bitsN <= 0x1f, "First part of bits should be in [0x03, 0x1d]"
         bitsBase = bits & 0xffffff
-        assert bitsBase >= 0x8000 and bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
+        assert 0x8000 <= bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
         target = bitsBase << (8 * (bitsN - 3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')

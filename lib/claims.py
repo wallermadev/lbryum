@@ -24,6 +24,7 @@ def get_hash_for_outpoint(txhash, nOut, nHeightOfLastTakeover):
     return outPointHash
 
 
+# noinspection PyPep8
 def verify_proof(proof, rootHash, name):
     previous_computed_hash = None
     reverse_computed_name = ''

@@ -629,7 +629,7 @@ class Abstract_Wallet(PrintError):
                     u -= v
         return c, u, x
 
-
+    # noinspection PyPep8
     def get_spendable_coins(self, domain = None, exclude_frozen = True, abandon_txid=None):
         coins = []
         found_abandon_txid = False
@@ -818,7 +818,7 @@ class Abstract_Wallet(PrintError):
                         if prev_hash == tx_hash:
                             l.remove(item)
                             self.pruned_txo[ser] = next_tx
-                    if l == []:
+                    if not l:
                         dd.pop(addr)
                     else:
                         dd[addr] = l
@@ -1982,13 +1982,13 @@ class OldWallet(Deterministic_Wallet):
 
 wallet_types = [
     # category   type        description                   constructor
-    ('standard', 'old',      ("Old wallet"),               OldWallet),
-    ('standard', 'xpub',     ("BIP32 Import"),             BIP32_Simple_Wallet),
-    ('standard', 'standard', ("Standard wallet"),          NewWallet),
-    ('standard', 'imported', ("Imported wallet"),          Imported_Wallet),
-    ('multisig', '2of2',     ("Multisig wallet (2 of 2)"), Multisig_Wallet),
-    ('multisig', '2of3',     ("Multisig wallet (2 of 3)"), Multisig_Wallet),
-    ('bip44',    'bip44',    ("Restored hardware wallet"), BIP44_Wallet),
+    ('standard', 'old', "Old wallet", OldWallet),
+    ('standard', 'xpub', "BIP32 Import", BIP32_Simple_Wallet),
+    ('standard', 'standard', "Standard wallet", NewWallet),
+    ('standard', 'imported', "Imported wallet", Imported_Wallet),
+    ('multisig', '2of2', "Multisig wallet (2 of 2)", Multisig_Wallet),
+    ('multisig', '2of3', "Multisig wallet (2 of 3)", Multisig_Wallet),
+    ('bip44',    'bip44', "Restored hardware wallet", BIP44_Wallet),
 ]
 
 # former WalletFactory

@@ -299,6 +299,7 @@ def base_encode(v, base):
     return (chars[0]*nPad) + result
 
 
+# noinspection PyPep8
 def base_decode(v, length, base):
     """ decode v into a string of len bytes."""
     if base == 58:

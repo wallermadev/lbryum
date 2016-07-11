@@ -87,6 +87,8 @@ def filter_protocol(hostmap = ONLINE_SERVERS, protocol = 's'):
             eligible.append(serialize_server(host, port, protocol))
     return eligible
 
+
+# noinspection PyPep8
 def pick_random_server(hostmap = DEFAULT_SERVERS, protocol = 't', exclude_set = set()):
     eligible = list(set(filter_protocol(hostmap, protocol)) - exclude_set)
     return random.choice(eligible) if eligible else None
@@ -340,7 +342,7 @@ class Network(util.DaemonThread):
         return out
 
     def start_interface(self, server):
-        if (not server in self.interfaces and not server in self.connecting):
+        if not server in self.interfaces and not server in self.connecting:
             if server == self.default_server:
                 self.print_error("connecting to %s as new interface" % server)
                 self.set_status('connecting')

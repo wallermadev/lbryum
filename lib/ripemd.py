@@ -152,6 +152,8 @@ PADDING = [0x80] + [0]*63
 import sys
 import struct
 
+
+# noinspection PyPep8,PyPep8,PyPep8,PyPep8
 def RMD160Transform(state, block): #uint32 state[5], uchar block[64]
     x = [0]*16
     if sys.byteorder == 'little':

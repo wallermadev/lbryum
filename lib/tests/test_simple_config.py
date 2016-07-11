@@ -115,6 +115,7 @@ class Test_SimpleConfig(unittest.TestCase):
         self.assertEqual(self.options.get("electrum_path"),
                          config.get("electrum_path"))
 
+    # noinspection PyPep8
     def test_can_set_options_from_system_config(self):
         fake_read_system = lambda : {"electrum_path": self.electrum_dir}
         fake_read_user = lambda _: {}

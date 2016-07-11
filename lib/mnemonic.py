@@ -67,7 +67,7 @@ CJK_INTERVALS = [
 def is_CJK(c):
     n = ord(c)
     for imin,imax,name in CJK_INTERVALS:
-        if n>=imin and n<=imax: return True
+        if imin <= n <= imax: return True
     return False
 
 

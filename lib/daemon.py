@@ -31,6 +31,7 @@ from simple_config import SimpleConfig
 def lockfile(config):
     return os.path.join(config.path, 'daemon')
 
+
 def get_daemon(config):
     try:
         with open(lockfile(config)) as f:
@@ -47,7 +48,6 @@ def get_daemon(config):
 
 
 class RequestHandler(SimpleJSONRPCRequestHandler):
-
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
@@ -59,9 +59,7 @@ class RequestHandler(SimpleJSONRPCRequestHandler):
         SimpleJSONRPCRequestHandler.end_headers(self)
 
 
-
 class Daemon(DaemonThread):
-
     def __init__(self, config, network):
         DaemonThread.__init__(self)
         self.config = config
@@ -101,7 +99,7 @@ class Daemon(DaemonThread):
                 'nodes': self.network.get_interfaces(),
                 'connected': self.network.is_connected(),
                 'auto_connect': p[4],
-                'wallets': dict([ (k, w.is_up_to_date()) for k, w in self.wallets.items()]),
+                'wallets': dict([(k, w.is_up_to_date()) for k, w in self.wallets.items()]),
             }
         elif sub == 'stop':
             self.stop()

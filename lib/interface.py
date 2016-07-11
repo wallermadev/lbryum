@@ -27,6 +27,7 @@ import time
 import traceback
 
 import requests
+
 ca_path = requests.certs.where()
 
 import util
@@ -49,8 +50,8 @@ def Connection(server, queue, config_path):
     c.start()
     return c
 
-class TcpConnection(threading.Thread, util.PrintError):
 
+class TcpConnection(threading.Thread, util.PrintError):
     def __init__(self, server, queue, config_path):
         threading.Thread.__init__(self)
         self.daemon = True
@@ -117,7 +118,8 @@ class TcpConnection(threading.Thread, util.PrintError):
                     return
                 # try with CA first
                 try:
-                    s = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_SSLv23, cert_reqs=ssl.CERT_REQUIRED, ca_certs=ca_path, do_handshake_on_connect=True)
+                    s = ssl.wrap_socket(s, ssl_version=ssl.PROTOCOL_SSLv23, cert_reqs=ssl.CERT_REQUIRED,
+                                        ca_certs=ca_path, do_handshake_on_connect=True)
                 except ssl.SSLError, e:
                     s = None
                 if s and self.check_host_name(s.getpeercert(), self.host):
@@ -139,9 +141,9 @@ class TcpConnection(threading.Thread, util.PrintError):
                 s.close()
                 cert = ssl.DER_cert_to_PEM_cert(dercert)
                 # workaround android bug
-                cert = re.sub("([^\n])-----END CERTIFICATE-----","\\1\n-----END CERTIFICATE-----",cert)
+                cert = re.sub("([^\n])-----END CERTIFICATE-----", "\\1\n-----END CERTIFICATE-----", cert)
                 temporary_path = cert_path + '.temp'
-                with open(temporary_path,"w") as f:
+                with open(temporary_path, "w") as f:
                     f.write(cert)
             else:
                 is_new = False
@@ -155,7 +157,7 @@ class TcpConnection(threading.Thread, util.PrintError):
                 s = ssl.wrap_socket(s,
                                     ssl_version=ssl.PROTOCOL_SSLv23,
                                     cert_reqs=ssl.CERT_REQUIRED,
-                                    ca_certs= (temporary_path if is_new else cert_path),
+                                    ca_certs=(temporary_path if is_new else cert_path),
                                     do_handshake_on_connect=True)
             except ssl.SSLError, e:
                 self.print_error("SSL error:", e)
@@ -202,6 +204,7 @@ class TcpConnection(threading.Thread, util.PrintError):
         if socket:
             self.print_error("connected")
         self.queue.put((self.server, socket))
+
 
 class Interface(util.PrintError):
     """The Interface class handles a socket connected to a single remote
@@ -313,7 +316,7 @@ class Interface(util.PrintError):
                     responses.append((request, response))
                 else:
                     self.print_error("unknown wire ID", wire_id)
-                    responses.append(None, None) # Signal
+                    responses.append(None, None)  # Signal
                     break
 
         return responses
@@ -333,8 +336,8 @@ def check_cert(host, cert):
     except:
         expired = True
 
-    m = "host: %s\n"%host
-    m += "has_expired: %s\n"% expired
+    m = "host: %s\n" % host
+    m += "has_expired: %s\n" % expired
     util.print_msg(m)
 
 
@@ -345,6 +348,7 @@ def _match_hostname(name, val):
 
     return val.startswith('*.') and name.endswith(val[1:])
 
+
 def test_certificates():
     from simple_config import SimpleConfig
     config = SimpleConfig()
@@ -352,10 +356,11 @@ def test_certificates():
     certs = os.listdir(mydir)
     for c in certs:
         print c
-        p = os.path.join(mydir,c)
+        p = os.path.join(mydir, c)
         with open(p) as f:
             cert = f.read()
         check_cert(c, cert)
+
 
 if __name__ == "__main__":
     test_certificates()
