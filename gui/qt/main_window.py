@@ -54,7 +54,7 @@ from transaction_dialog import show_transaction
 
 
 
-from lbryum import ELECTRUM_VERSION
+from lbryum import LBRYUM_VERSION
 import re
 
 from util import *

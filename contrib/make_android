@@ -7,7 +7,7 @@ if __name__ == '__main__':
     os.chdir('..')
 
     v = imp.load_source('version', 'lib/version.py')
-    version = v.ELECTRUM_VERSION
+    version = v.LBRYUM_VERSION
 
     if not ( os.path.exists('packages')):
         print "The packages directory is missing."
