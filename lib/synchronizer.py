@@ -19,7 +19,7 @@
 
 from threading import Lock
 
-from bitcoin import Hash, hash_encode
+from lbrycrd import Hash, hash_encode
 from transaction import Transaction
 from util import print_error, print_msg, ThreadJob
 
@@ -72,6 +72,7 @@ class Synchronizer(ThreadJob):
             self.network.send(msgs, self.addr_subscription_response)
 
     def addr_subscription_response(self, response):
+
         params, result = self.parse_response(response)
         if not params:
             return
@@ -80,8 +81,8 @@ class Synchronizer(ThreadJob):
         if self.wallet.get_status(history) != result:
             if self.requested_histories.get(addr) is None:
                 self.requested_histories[addr] = result
-                self.network.send([('blockchain.address.get_history', [addr])],
-                                  self.addr_history_response)
+                self.network.send([('blockchain.address.get_history', [addr])], self.addr_history_response)
+
         # remove addr from list only after it is added to requested_histories
         if addr in self.requested_addrs:  # Notifications won't be in
             self.requested_addrs.remove(addr)
@@ -91,7 +92,7 @@ class Synchronizer(ThreadJob):
         if not params:
             return
         addr = params[0]
-        self.print_error("receiving history", addr, len(result))
+        # self.print_error("receiving history", addr, result)
         server_status = self.requested_histories[addr]
         hashes = set(map(lambda item: item['tx_hash'], result))
         hist = map(lambda item: (item['tx_hash'], item['height']), result)
@@ -152,7 +153,7 @@ class Synchronizer(ThreadJob):
         we don't have.
         '''
         for history in self.wallet.history.values():
-            # Old electrum servers returned ['*'] when all history for
+            # Old lbryum servers returned ['*'] when all history for
             # the address was pruned.  This no longer happens but may
             # remain in old wallets.
             if history == ['*']:

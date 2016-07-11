@@ -60,7 +60,7 @@ def numberToByteArray(n, howManyBytes=None):
     not be larger.  The returned bytearray will contain a big-endian
     encoding of the input integer (n).
     """    
-    if howManyBytes == None:
+    if howManyBytes is None:
         howManyBytes = numBytes(n)
     b = bytearray(howManyBytes)
     for count in range(howManyBytes-1, -1, -1):
@@ -127,7 +127,7 @@ def getRandomNumber(low, high):
         if lastBits:
             bytes[0] = bytes[0] % (1 << lastBits)
         n = bytesToNumber(bytes)
-        if n >= low and n < high:
+        if low <= n < high:
             return n
 
 def gcd(a,b):
@@ -240,7 +240,7 @@ def getRandomSafePrime(bits, display=False):
     while 1:
         if display: print(".", end=' ')
         q += 30
-        if (q >= high):
+        if q >= high:
             q = getRandomNumber(low, high)
             q += 29 - (q % 30)
         #Ideas from Tom Wu's SRP code
@@ -316,7 +316,7 @@ class RSAKey(object):
         prefixedHashBytes2 = self._addPKCS1SHA1Prefix(hashBytes, True)
         result1 = self.verify(sigBytes, prefixedHashBytes1)
         result2 = self.verify(sigBytes, prefixedHashBytes2)
-        return (result1 or result2)
+        return result1 or result2
 
     def sign(self, bytes):
         """Sign the passed-in bytes.
@@ -383,6 +383,7 @@ class RSAKey(object):
         encBytes = numberToByteArray(c, numBytes(self.n))
         return encBytes
 
+    # noinspection PyPep8
     def decrypt(self, encBytes):
         """Decrypt the passed-in bytes.
 
@@ -434,11 +435,9 @@ class RSAKey(object):
         # accept both.  However, nothing uses this code yet, so this is 
         # all fairly moot.
         if not withNULL:
-            prefixBytes = bytearray(\
-            [0x30,0x1f,0x30,0x07,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x04,0x14])            
+            prefixBytes = bytearray([0x30,0x1f,0x30,0x07,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x04,0x14])
         else:
-            prefixBytes = bytearray(\
-            [0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x05,0x00,0x04,0x14])            
+            prefixBytes = bytearray([0x30,0x21,0x30,0x09,0x06,0x05,0x2b,0x0e,0x03,0x02,0x1a,0x05,0x00,0x04,0x14])
         prefixedBytes = prefixBytes + bytes
         return prefixedBytes
 

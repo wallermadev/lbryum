@@ -20,8 +20,8 @@
 # Note: The deserialization code originally comes from ABE.
 
 
-import bitcoin
-from bitcoin import *
+import lbrycrd
+from lbrycrd import *
 from util import print_error, profiler
 import time
 import sys
@@ -210,7 +210,8 @@ opcodes = Enumeration("Opcodes", [
     "OP_GREATERTHAN", "OP_LESSTHANOREQUAL", "OP_GREATERTHANOREQUAL", "OP_MIN", "OP_MAX",
     "OP_WITHIN", "OP_RIPEMD160", "OP_SHA1", "OP_SHA256", "OP_HASH160",
     "OP_HASH256", "OP_CODESEPARATOR", "OP_CHECKSIG", "OP_CHECKSIGVERIFY", "OP_CHECKMULTISIG",
-    "OP_CHECKMULTISIGVERIFY",
+    "OP_CHECKMULTISIGVERIFY", "OP_NOP1", "OP_NOP2", "OP_NOP3", "OP_NOP4", "OP_NOP5", "OP_CLAIM_NAME",
+    "OP_SUPPORT_CLAIM", "OP_UPDATE_CLAIM",
     ("OP_SINGLEBYTE_END", 0xF0),
     ("OP_DOUBLEBYTE_BEGIN", 0xF000),
     "OP_PUBKEY", "OP_PUBKEYHASH",
@@ -266,7 +267,7 @@ def match_decoded(decoded, to_match):
     if len(decoded) != len(to_match):
         return False;
     for i in range(len(decoded)):
-        if to_match[i] == opcodes.OP_PUSHDATA4 and decoded[i][0] <= opcodes.OP_PUSHDATA4 and decoded[i][0]>0:
+        if to_match[i] == opcodes.OP_PUSHDATA4 and opcodes.OP_PUSHDATA4 >= decoded[i][0] > 0:
             continue  # Opcodes below OP_PUSHDATA4 all just push data onto stack, and are equivalent.
         if to_match[i] != decoded[i][0]:
             return False
@@ -385,22 +386,81 @@ def parse_scriptSig(d, bytes):
     d['address'] = hash_160_to_bc_address(hash_160(redeemScript.decode('hex')), 5)
 
 
+class NameClaim(object):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+
+class ClaimUpdate(object):
+    def __init__(self, name, value, claim_id):
+        self.name = name
+        self.value = value
+        self.claim_id = claim_id
+
+
+class ClaimSupport(object):
+    def __init__(self, name, claim_id):
+        self.name = name
+        self.claim_id = claim_id
+
+
 def decode_claim_script(decoded_script):
     if len(decoded_script) <= 6:
         return False
-    if decoded_script[0][0] != 0:
+    op = 0
+    claim_type = decoded_script[op][0]
+    if claim_type == opcodes.OP_UPDATE_CLAIM:
+        if len(decoded_script) <= 7:
+            return False
+    if claim_type not in [
+        opcodes.OP_CLAIM_NAME,
+        opcodes.OP_SUPPORT_CLAIM,
+        opcodes.OP_UPDATE_CLAIM
+    ]:
         return False
-    if not (0 < decoded_script[1][0] <= opcodes.OP_PUSHDATA4):
+    op += 1
+    value = None
+    claim_id = None
+    claim = None
+    if not (0 < decoded_script[op][0] <= opcodes.OP_PUSHDATA4):
         return False
-    name = decoded_script[1][1]
-    if not (0 < decoded_script[2][0] <= opcodes.OP_PUSHDATA4):
+    name = decoded_script[op][1]
+    op += 1
+    if not (0 < decoded_script[op][0] <= opcodes.OP_PUSHDATA4):
         return False
-    value = decoded_script[2][1]
-    if decoded_script[3][0] != opcodes.OP_2DROP:
+    if decoded_script[0][0] in [
+        opcodes.OP_SUPPORT_CLAIM,
+        opcodes.OP_UPDATE_CLAIM
+    ]:
+        claim_id = decoded_script[op][1]
+        if len(claim_id) != 20:
+            return False
+    else:
+        value = decoded_script[op][1]
+    op += 1
+    if decoded_script[0][0] == opcodes.OP_UPDATE_CLAIM:
+        value = decoded_script[op][1]
+        op += 1
+    if decoded_script[op][0] != opcodes.OP_2DROP:
         return False
-    if decoded_script[4][0] != opcodes.OP_DROP:
+    op += 1
+    if decoded_script[op][0] != opcodes.OP_DROP:
         return False
-    return name, value, decoded_script[5:]
+    op += 1
+    if decoded_script[0][0] == opcodes.OP_CLAIM_NAME:
+        if name is None or value is None:
+            return False
+        claim = NameClaim(name, value)
+    elif decoded_script[0][0] == opcodes.OP_UPDATE_CLAIM:
+        if name is None or value is None or claim_id is None:
+            return False
+        claim = ClaimUpdate(name, value, claim_id)
+    elif decoded_script[0][0] == opcodes.OP_SUPPORT_CLAIM:
+        if name is None or claim_id is None:
+            return False
+        claim = ClaimSupport(name, claim_id)
+    return claim, decoded_script[op:]
 
 
 def get_address_from_output_script(script_bytes):
@@ -409,9 +469,16 @@ def get_address_from_output_script(script_bytes):
     r = decode_claim_script(decoded)
     claim_args = None
     if r is not False:
-        claim_name, claim_value, decoded = r
-        claim_args = (claim_name, claim_value)
-        output_type |= TYPE_CLAIM
+        claim_info, decoded = r
+        if isinstance(claim_info, NameClaim):
+            claim_args = (claim_info.name, claim_info.value)
+            output_type |= TYPE_CLAIM
+        elif isinstance(claim_info, ClaimSupport):
+            claim_args = (claim_info.name, claim_info.claim_id)
+            output_type |= TYPE_SUPPORT
+        elif isinstance(claim_info, ClaimUpdate):
+            claim_args = (claim_info.name, claim_info.value, claim_info.claim_id)
+            output_type |= TYPE_UPDATE
 
     # The Genesis Block, self-payments, and pay-by-IP-address payments look like:
     # 65 BYTES:... CHECKSIG
@@ -437,7 +504,7 @@ def get_address_from_output_script(script_bytes):
         output_val = bytes
         output_type |= TYPE_SCRIPT
 
-    if output_type & TYPE_CLAIM:
+    if output_type & (TYPE_CLAIM | TYPE_SUPPORT | TYPE_UPDATE):
         output_val = (claim_args, output_val)
 
     return output_type, output_val
@@ -623,10 +690,26 @@ class Transaction:
         if output_type & TYPE_CLAIM:
             claim, addr = addr
             claim_name, claim_value = claim
-            script += '00'                                          # op_claim_name
+            script += 'b5'                                          # op_claim_name
             script += push_script(claim_name.encode('hex'))
             script += push_script(claim_value.encode('hex'))
             script += '6d75'                                        # op_2drop, op_drop
+        elif output_type & TYPE_SUPPORT:
+            claim, addr = addr
+            claim_name, claim_id = claim
+            script += 'b6'
+            script += push_script(claim_name.encode('hex'))
+            script += push_script(claim_id.encode('hex'))
+            script += '6d75'
+        elif output_type & TYPE_UPDATE:
+            claim, addr = addr
+            claim_name, claim_value, claim_id = claim
+            script += 'b7'
+            script += push_script(claim_name.encode('hex'))
+            script += push_script(claim_id.encode('hex'))
+            script += push_script(claim_value.encode('hex'))
+            script += '6d6d'
+
         if output_type & TYPE_SCRIPT:
             script += addr.encode('hex')
         elif output_type & TYPE_ADDRESS:                                      # op_2drop, op_drop
@@ -690,6 +773,12 @@ class Transaction:
             if txin['is_claim']:
                 script_type |= TYPE_CLAIM
                 address = ((txin['claim_name'], txin['claim_value']), address)
+            elif txin['is_support']:
+                script_type |= TYPE_SUPPORT
+                address = ((txin['claim_name'], txin['claim_id']), address)
+            elif txin['is_update']:
+                script_type |= TYPE_UPDATE
+                address = ((txin['claim_name'], txin['claim_id'], txin['claim_value']), address)
             script = txin['redeemScript'] if p2sh else self.pay_script(script_type, address)
         else:
             script = ''
@@ -844,7 +933,7 @@ class Transaction:
                     for_sig = Hash(self.tx_for_sig(i).decode('hex'))
                     pkey = regenerate_key(sec)
                     secexp = pkey.secret
-                    private_key = bitcoin.MySigningKey.from_secret_exponent( secexp, curve = SECP256k1 )
+                    private_key = lbrycrd.MySigningKey.from_secret_exponent(secexp, curve = SECP256k1)
                     public_key = private_key.get_verifying_key()
                     sig = private_key.sign_digest_deterministic( for_sig, hashfunc=hashlib.sha256, sigencode = ecdsa.util.sigencode_der )
                     assert public_key.verify_digest( sig, for_sig, sigdecode = ecdsa.util.sigdecode_der)
@@ -858,7 +947,7 @@ class Transaction:
         """convert pubkeys to addresses"""
         o = []
         for type, x, v in self.outputs():
-            if type & TYPE_CLAIM:
+            if type & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                 x = x[1]
             if type & TYPE_ADDRESS:
                 addr = x

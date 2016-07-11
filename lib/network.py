@@ -15,7 +15,7 @@ import json
 import logging
 
 import util
-from bitcoin import *
+from lbrycrd import *
 from interface import Connection, Interface
 from blockchain import Blockchain, BLOCKS_PER_CHUNK
 from version import LBRYUM_VERSION, PROTOCOL_VERSION
@@ -87,6 +87,8 @@ def filter_protocol(hostmap = ONLINE_SERVERS, protocol = 's'):
             eligible.append(serialize_server(host, port, protocol))
     return eligible
 
+
+# noinspection PyPep8
 def pick_random_server(hostmap = DEFAULT_SERVERS, protocol = 't', exclude_set = set()):
     eligible = list(set(filter_protocol(hostmap, protocol)) - exclude_set)
     return random.choice(eligible) if eligible else None
@@ -130,7 +132,7 @@ def serialize_server(host, port, protocol):
     return str(':'.join([host, port, protocol]))
 
 class Network(util.DaemonThread):
-    """The Network class manages a set of connections to remote electrum
+    """The Network class manages a set of connections to remote lbryum
     servers, each connected socket is handled by an Interface() object.
     Connections are initiated by a Connection() thread which stops once
     the connection succeeds or fails.
@@ -340,7 +342,7 @@ class Network(util.DaemonThread):
         return out
 
     def start_interface(self, server):
-        if (not server in self.interfaces and not server in self.connecting):
+        if not server in self.interfaces and not server in self.connecting:
             if server == self.default_server:
                 self.print_error("connecting to %s as new interface" % server)
                 self.set_status('connecting')
@@ -672,7 +674,7 @@ class Network(util.DaemonThread):
             if req_if == interface and req_idx == response['params'][0]:
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
                 # If not finished, get the next chunk
-                if idx < 0 or self.get_local_height() >= data['if_height']:
+                if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
                     self.bc_requests.popleft()
                     self.notify('updated')
                 else:
@@ -701,7 +703,7 @@ class Network(util.DaemonThread):
                         self.notify('updated')
                     else:
                         interface.print_error("header didn't connect, dismissing interface")
-                        interface.stop()
+                        interface.close()
                 else:
                     self.request_header(interface, data, next_height)
 
@@ -712,7 +714,7 @@ class Network(util.DaemonThread):
         local_height, if_height = self.get_local_height(), data['if_height']
         if if_height <= local_height:
             return False
-        elif if_height > local_height + 50:
+        elif if_height > local_height + BLOCKS_PER_CHUNK:
             self.request_chunk(interface, data, (local_height + 1) / BLOCKS_PER_CHUNK)
         else:
             self.request_header(interface, data, if_height)
@@ -751,7 +753,7 @@ class Network(util.DaemonThread):
         rin = [i for i in self.interfaces.values()]
         win = [i for i in self.interfaces.values() if i.unsent_requests]
         try:
-            rout, wout, xout = select.select(rin, win, [], 0.1)
+            rout, wout, xout = select.select(rin, win, [], 0.2)
         except socket.error as (code, msg):
             if code == errno.EINTR:
                 return
@@ -788,7 +790,6 @@ class Network(util.DaemonThread):
         if i == self.interface:
             self.switch_lagging_interface()
             self.notify('updated')
-
 
     def get_header(self, tx_height):
         return self.blockchain.read_header(tx_height)

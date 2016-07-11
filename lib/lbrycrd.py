@@ -39,6 +39,8 @@ TYPE_ADDRESS = 1
 TYPE_PUBKEY  = 2
 TYPE_SCRIPT  = 4
 TYPE_CLAIM   = 8
+TYPE_SUPPORT = 16
+TYPE_UPDATE  = 32
 
 
 # claim related constants
@@ -145,9 +147,28 @@ def sha256(x):
     return hashlib.sha256(x).digest()
 
 
+def sha512(x):
+    return hashlib.sha512(x).digest()
+
+
+def ripemd160(x):
+    h = hashlib.new('ripemd160')
+    h.update(x)
+    return h.digest()
+
+
 def Hash(x):
     if type(x) is unicode: x=x.encode('utf-8')
     return sha256(sha256(x))
+
+
+def PoWHash(x):
+    if type(x) is unicode: x=x.encode('utf-8')
+    r = sha512(Hash(x))
+    r1 = ripemd160(r[:len(r)/2])
+    r2 = ripemd160(r[len(r)/2:])
+    r3 = Hash(r1 + r2)
+    return r3
 
 
 hash_encode = lambda x: x[::-1].encode('hex')
@@ -204,6 +225,7 @@ def i2o_ECPublicKey(pubkey, compressed=False):
 
 ############ functions from pywallet #####################
 
+
 def hash_160(public_key):
     try:
         md = hashlib.new('ripemd160')
@@ -220,15 +242,30 @@ def public_key_to_bc_address(public_key):
     h160 = hash_160(public_key)
     return hash_160_to_bc_address(h160)
 
-def hash_160_to_bc_address(h160, addrtype = 0):
-    vh160 = chr(addrtype) + h160
+
+#lbrycrd/src/chainparams.cpp line 176
+PUBKEY_ADDRESS = (0, 85)
+SCRIPT_ADDRESS = (5, 122)
+
+
+def hash_160_to_bc_address(h160, addrtype=0):
+    if addrtype == PUBKEY_ADDRESS[0]:
+        c = chr(PUBKEY_ADDRESS[1])
+    elif addrtype == SCRIPT_ADDRESS[0]:
+        c = chr(SCRIPT_ADDRESS[1])
+
+    vh160 = c + h160
     h = Hash(vh160)
     addr = vh160 + h[0:4]
     return base_encode(addr, base=58)
 
+
 def bc_address_to_hash_160(addr):
     bytes = base_decode(addr, 25, base=58)
-    return ord(bytes[0]), bytes[1:21]
+    if bytes[0] == chr(PUBKEY_ADDRESS[1]):
+        return PUBKEY_ADDRESS[0], bytes[1:21]
+    elif bytes[0] == chr(SCRIPT_ADDRESS[1]):
+        return SCRIPT_ADDRESS[0], bytes[1:21]
 
 
 __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -262,6 +299,7 @@ def base_encode(v, base):
     return (chars[0]*nPad) + result
 
 
+# noinspection PyPep8
 def base_decode(v, length, base):
     """ decode v into a string of len bytes."""
     if base == 58:

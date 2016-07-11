@@ -31,13 +31,13 @@ from i18n import _
 
 from util import NotEnoughFunds, PrintError, profiler
 
-from bitcoin import *
+from lbrycrd import *
 from account import *
 from version import *
 
 from transaction import Transaction
 from plugins import run_hook
-import bitcoin
+import lbrycrd
 from coinchooser import COIN_CHOOSERS
 from synchronizer import Synchronizer
 from verifier import SPV
@@ -142,7 +142,6 @@ class WalletStorage(PrintError):
         if 'ANDROID_DATA' not in os.environ:
             import stat
             os.chmod(self.path, mode)
-        self.print_error("saved", self.path)
         self.modified = False
 
 
@@ -630,7 +629,7 @@ class Abstract_Wallet(PrintError):
                     u -= v
         return c, u, x
 
-
+    # noinspection PyPep8
     def get_spendable_coins(self, domain = None, exclude_frozen = True, abandon_txid=None):
         coins = []
         found_abandon_txid = False
@@ -656,11 +655,20 @@ class Abstract_Wallet(PrintError):
                         'prevout_hash':prevout_hash,
                         'height':tx_height,
                         'coinbase':is_cb,
-                        'is_claim': bool(txout[0] & TYPE_CLAIM)
+                        'is_claim': bool(txout[0] & TYPE_CLAIM),
+                        'is_support': bool(txout[0] & TYPE_SUPPORT),
+                        'is_update': bool(txout[0] & TYPE_UPDATE),
                     }
                     if txout[0] & TYPE_CLAIM:
                         output['claim_name'] = txout[1][0][0]
                         output['claim_value'] = txout[1][0][1]
+                    elif txout[0] & TYPE_SUPPORT:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_id'] = txout[1][0][1]
+                    elif txout[0] & TYPE_UPDATE:
+                        output['claim_name'] = txout[1][0][0]
+                        output['claim_id'] = txout[1][0][1]
+                        output['claim_value'] = txout[1][0][2]
                     coins.append(output)
                 if abandon_txid is not None and prevout_hash == abandon_txid:
                     found_abandon_txid = True
@@ -739,6 +747,7 @@ class Abstract_Wallet(PrintError):
                     return addr
 
     def add_transaction(self, tx_hash, tx):
+        print_error("Adding tx: ", tx_hash)
         is_coinbase = tx.inputs()[0].get('is_coinbase') == True
         with self.transaction_lock:
             # add inputs
@@ -790,6 +799,7 @@ class Abstract_Wallet(PrintError):
                     dd[addr].append((ser, v))
             # save
             self.transactions[tx_hash] = tx
+            print_error("Saved")
 
     def remove_transaction(self, tx_hash):
         with self.transaction_lock:
@@ -808,7 +818,7 @@ class Abstract_Wallet(PrintError):
                         if prev_hash == tx_hash:
                             l.remove(item)
                             self.pruned_txo[ser] = next_tx
-                    if l == []:
+                    if not l:
                         dd.pop(addr)
                     else:
                         dd[addr] = l
@@ -910,25 +920,35 @@ class Abstract_Wallet(PrintError):
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
-                if txout[0] & TYPE_CLAIM:
-                    claim_name, claim_value = txout[1][0]
+                if txout[0] & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                     local_height = self.network.get_local_height()
-                    expired = tx_height + bitcoin.EXPIRATION_BLOCKS <= local_height
+                    expired = tx_height + lbrycrd.EXPIRATION_BLOCKS <= local_height
                     output = {
-                        'name':  claim_name,
-                        'value': claim_value,
                         'txid': prevout_hash,
                         'address': addr,
                         'category': "name",
                         'amount': float(value)/COIN,
                         'height': tx_height,
-                        'expiration height': tx_height + bitcoin.EXPIRATION_BLOCKS,
+                        'expiration height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
                         'expired': expired,
                         'confirmations': local_height - tx_height,
                         'is spent': txo in txis,
                     }
+                    if txout[0] & TYPE_CLAIM:
+                        claim_name, claim_value = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_value
+                    elif txout[0] & TYPE_SUPPORT:
+                        claim_name, claim_id = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_id
+                    elif txout[0] & TYPE_UPDATE:
+                        claim_name, claim_id, claim_value = txout[1][0]
+                        output['name'] = claim_name
+                        output['value'] = claim_value
+                        output['claim_id'] = claim_id
                     if not expired:
-                        output['blocks to expiration'] = tx_height + bitcoin.EXPIRATION_BLOCKS - local_height
+                        output['blocks to expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
                     claims.append(output)
         return claims
 
@@ -952,8 +972,8 @@ class Abstract_Wallet(PrintError):
     def fee_per_kb(self, config):
         b = config.get('dynamic_fees')
         f = config.get('fee_factor', 50)
-        F = config.get('fee_per_kb', bitcoin.RECOMMENDED_FEE)
-        return min(bitcoin.RECOMMENDED_FEE, self.network.fee*(50 + f)/100) if b and self.network and self.network.fee else F
+        F = config.get('fee_per_kb', lbrycrd.RECOMMENDED_FEE)
+        return min(lbrycrd.RECOMMENDED_FEE, self.network.fee * (50 + f) / 100) if b and self.network and self.network.fee else F
 
     def relayfee(self):
         RELAY_FEE = 5000
@@ -978,7 +998,7 @@ class Abstract_Wallet(PrintError):
     def make_unsigned_transaction(self, coins, outputs, config, fixed_fee=None, change_addr=None, abandon_txid=None):
         # check outputs
         for type, data, value in outputs:
-            if type & TYPE_CLAIM:
+            if type & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                 data = data[1]
             if type & TYPE_ADDRESS:
                 assert is_address(data), "Address " + data + " is invalid!"
@@ -1284,7 +1304,7 @@ class Abstract_Wallet(PrintError):
 
     def get_private_key_from_xpubkey(self, x_pubkey, password):
         if x_pubkey[0:2] in ['02','03','04']:
-            addr = bitcoin.public_key_to_bc_address(x_pubkey.decode('hex'))
+            addr = lbrycrd.public_key_to_bc_address(x_pubkey.decode('hex'))
             if self.is_mine(addr):
                 return self.get_private_key(addr, password)[0]
         elif x_pubkey[0:2] == 'ff':
@@ -1312,7 +1332,7 @@ class Abstract_Wallet(PrintError):
 
     def can_sign_xpubkey(self, x_pubkey):
         if x_pubkey[0:2] in ['02','03','04']:
-            addr = bitcoin.public_key_to_bc_address(x_pubkey.decode('hex'))
+            addr = lbrycrd.public_key_to_bc_address(x_pubkey.decode('hex'))
             return self.is_mine(addr)
         elif x_pubkey[0:2] == 'ff':
             if not isinstance(self, BIP32_Wallet): return False
@@ -1681,7 +1701,7 @@ class BIP32_Simple_Wallet(BIP32_Wallet):
     wallet_type = 'xpub'
 
     def create_xprv_wallet(self, xprv, password):
-        xpub = bitcoin.xpub_from_xprv(xprv)
+        xpub = lbrycrd.xpub_from_xprv(xprv)
         account = BIP32_Account({'xpub':xpub})
         self.storage.put('seed_version', self.seed_version)
         self.add_master_private_key(self.root_name, xprv, password)
@@ -1962,13 +1982,13 @@ class OldWallet(Deterministic_Wallet):
 
 wallet_types = [
     # category   type        description                   constructor
-    ('standard', 'old',      ("Old wallet"),               OldWallet),
-    ('standard', 'xpub',     ("BIP32 Import"),             BIP32_Simple_Wallet),
-    ('standard', 'standard', ("Standard wallet"),          NewWallet),
-    ('standard', 'imported', ("Imported wallet"),          Imported_Wallet),
-    ('multisig', '2of2',     ("Multisig wallet (2 of 2)"), Multisig_Wallet),
-    ('multisig', '2of3',     ("Multisig wallet (2 of 3)"), Multisig_Wallet),
-    ('bip44',    'bip44',    ("Restored hardware wallet"), BIP44_Wallet),
+    ('standard', 'old', "Old wallet", OldWallet),
+    ('standard', 'xpub', "BIP32 Import", BIP32_Simple_Wallet),
+    ('standard', 'standard', "Standard wallet", NewWallet),
+    ('standard', 'imported', "Imported wallet", Imported_Wallet),
+    ('multisig', '2of2', "Multisig wallet (2 of 2)", Multisig_Wallet),
+    ('multisig', '2of3', "Multisig wallet (2 of 3)", Multisig_Wallet),
+    ('bip44',    'bip44', "Restored hardware wallet", BIP44_Wallet),
 ]
 
 # former WalletFactory
@@ -1994,7 +2014,7 @@ class Wallet(object):
                     # pbkdf2 was not included with the binaries, and wallet creation aborted.
                     msg += "\nIt does not contain any keys, and can safely be removed."
                 else:
-                    # creation was complete if electrum was run from source
+                    # creation was complete if lbryum was run from source
                     msg += "\nPlease open this file with Electrum 1.9.8, and move your coins to a new wallet."
             raise BaseException(msg)
 
@@ -2063,12 +2083,12 @@ class Wallet(object):
     @staticmethod
     def is_address(text):
         parts = text.split()
-        return bool(parts) and all(bitcoin.is_address(x) for x in parts)
+        return bool(parts) and all(lbrycrd.is_address(x) for x in parts)
 
     @staticmethod
     def is_private_key(text):
         parts = text.split()
-        return bool(parts) and all(bitcoin.is_private_key(x) for x in parts)
+        return bool(parts) and all(lbrycrd.is_private_key(x) for x in parts)
 
     @staticmethod
     def is_any(text):
@@ -2144,7 +2164,7 @@ class Wallet(object):
         for i, text in enumerate(key_list):
             name = "x%d/" % (i+1)
             if Wallet.is_xprv(text):
-                xpub = bitcoin.xpub_from_xprv(text)
+                xpub = lbrycrd.xpub_from_xprv(text)
                 wallet.add_master_public_key(name, xpub)
                 wallet.add_master_private_key(name, text, password)
             elif Wallet.is_xpub(text):

@@ -2,7 +2,7 @@ import sys
 import re
 import dns
 
-import bitcoin
+import lbrycrd
 import dnssec
 from util import StoreDict, print_error
 from i18n import _
@@ -14,7 +14,7 @@ class Contacts(StoreDict):
         StoreDict.__init__(self, config, 'contacts')
 
     def resolve(self, k):
-        if bitcoin.is_address(k):
+        if lbrycrd.is_address(k):
             return {
                 'address': k,
                 'type': 'address'

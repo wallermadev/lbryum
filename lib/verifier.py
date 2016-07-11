@@ -18,7 +18,7 @@
 
 
 from util import ThreadJob
-from bitcoin import *
+from lbrycrd import *
 
 
 class SPV(ThreadJob):

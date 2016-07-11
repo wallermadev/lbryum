@@ -27,7 +27,7 @@ import ecdsa
 import pbkdf2
 
 from util import print_error
-from bitcoin import is_old_seed, is_new_seed
+from lbrycrd import is_old_seed, is_new_seed
 import version
 import i18n
 
@@ -67,7 +67,7 @@ CJK_INTERVALS = [
 def is_CJK(c):
     n = ord(c)
     for imin,imax,name in CJK_INTERVALS:
-        if n>=imin and n<=imax: return True
+        if imin <= n <= imax: return True
     return False
 
 
@@ -121,7 +121,7 @@ class Mnemonic(object):
     def mnemonic_to_seed(self, mnemonic, passphrase):
         PBKDF2_ROUNDS = 2048
         mnemonic = prepare_seed(mnemonic)
-        return pbkdf2.PBKDF2(mnemonic, 'electrum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(64)
+        return pbkdf2.PBKDF2(mnemonic, 'lbryum' + passphrase, iterations = PBKDF2_ROUNDS, macmodule = hmac, digestmodule = hashlib.sha512).read(64)
 
     def mnemonic_encode(self, i):
         n = len(self.wordlist)
