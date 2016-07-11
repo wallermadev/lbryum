@@ -658,7 +658,7 @@ class Network(util.DaemonThread):
             if req_if == interface and req_idx == response['params'][0]:
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
                 # If not finished, get the next chunk
-                if idx < 0 or self.get_local_height() >= data['if_height']:
+                if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
                     self.bc_requests.popleft()
                     self.notify('updated')
                 else:
@@ -698,7 +698,7 @@ class Network(util.DaemonThread):
         local_height, if_height = self.get_local_height(), data['if_height']
         if if_height <= local_height:
             return False
-        elif if_height > local_height + 50:
+        elif if_height > local_height + BLOCKS_PER_CHUNK:
             self.request_chunk(interface, data, (local_height + 1) / BLOCKS_PER_CHUNK)
         else:
             self.request_header(interface, data, if_height)
