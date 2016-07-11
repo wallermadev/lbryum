@@ -668,9 +668,10 @@ class Commands:
                             if 0 <= nOut < len(tx['outputs']):
                                 scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
                                 decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
-                                n, value, rest = decode_claim_script(decoded_script)
-                                if n == name:
-                                    return {'value': value}
+                                n, script = decode_claim_script(decoded_script)
+                                decoded_name, decoded_value = n.name, n.value
+                                if decoded_name == name:
+                                    return {'value': decoded_value}
                                 return {'error': 'name in proof did not match requested name'}
                             return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                         return {'error': "computed txid did not match given transaction: %s vs %s" %

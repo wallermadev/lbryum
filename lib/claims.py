@@ -25,7 +25,6 @@ def get_hash_for_outpoint(txhash, nOut, nHeightOfLastTakeover):
 
 
 def verify_proof(proof, rootHash, name):
-    # print "Proof: ", proof
     previous_computed_hash = None
     reverse_computed_name = ''
     verified_value = False
@@ -62,10 +61,6 @@ def verify_proof(proof, rootHash, name):
             to_hash += binascii.unhexlify(node['valueHash'])[::-1]
 
         previous_computed_hash = Hash(to_hash)
-
-    # print "Previous computed hash: ", previous_computed_hash.encode("hex")
-    # print "Roothash: ", binascii.unhexlify(rootHash)[::-1].encode("hex")
-    # print "Calculated name: ", reverse_computed_name[::-1]
 
     assert previous_computed_hash == binascii.unhexlify(rootHash)[::-1], InvalidProofError("computed hash does not match roothash")
     if 'txhash' in proof and 'nOut' in proof:
