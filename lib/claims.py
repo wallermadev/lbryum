@@ -1,5 +1,5 @@
 import binascii
-from lbryum.bitcoin import Hash
+from lbryum.lbrycrd import Hash
 from transaction import opcodes
 
 
@@ -7,21 +7,25 @@ class InvalidProofError(Exception):
     pass
 
 
+def height_to_vch(n):
+    r = [0 for i in range(8)]
+    r[4] = n >> 24
+    r[5] = n >> 16
+    r[6] = n >> 8
+    r[7] = n % 256
+    return ''.join([chr(x) for x in r])
+
+
 def get_hash_for_outpoint(txhash, nOut, nHeightOfLastTakeover):
     txhash_hash = Hash(txhash)
     nOut_hash = Hash(str(nOut))
-    height_of_last_takeover_hash = Hash(str(nHeightOfLastTakeover))
+    height_of_last_takeover_hash = Hash(height_to_vch(nHeightOfLastTakeover))
     outPointHash = Hash(txhash_hash + nOut_hash + height_of_last_takeover_hash)
-    # print "outPointHash: ", outPointHash
     return outPointHash
 
 
 def verify_proof(proof, rootHash, name):
-    # print "*****"
-    # print proof
-    # print rootHash
-    # print name
-    # print "*****"
+    # print "Proof: ", proof
     previous_computed_hash = None
     reverse_computed_name = ''
     verified_value = False
@@ -38,14 +42,12 @@ def verify_proof(proof, rootHash, name):
             if 'nodeHash' in child:
                 assert len(child['nodeHash']) == 64, InvalidProofError("invalid child nodeHash")
                 to_hash += binascii.unhexlify(child['nodeHash'])[::-1]
-                # print "Add nodehash"
             else:
                 assert previous_computed_hash is not None, InvalidProofError("previous computed hash is None")
                 assert found_child_in_chain is not True, InvalidProofError("already found the next child in the chain")
                 found_child_in_chain = True
                 reverse_computed_name += chr(child['character'])
                 to_hash += previous_computed_hash
-                # print "Add previous hash"
 
         if not found_child_in_chain:
             assert i == 0, InvalidProofError("did not find the alleged child")
@@ -55,17 +57,14 @@ def verify_proof(proof, rootHash, name):
             assert isinstance(proof['last takeover height'], (long, int)), InvalidProofError('last takeover height was invalid: {}'.format(proof['last takeover height']))
             to_hash += get_hash_for_outpoint(binascii.unhexlify(proof['txhash'])[::-1], proof['nOut'], proof['last takeover height'])
             verified_value = True
-            # print "Verified value"
         elif 'valueHash' in node:
             assert len(node['valueHash']) == 64, InvalidProofError("valueHash was invalid")
             to_hash += binascii.unhexlify(node['valueHash'])[::-1]
-            # print "Add valuehash"
 
         previous_computed_hash = Hash(to_hash)
-        # print "Previous hash: ", previous_computed_hash.encode("hex")
 
     # print "Previous computed hash: ", previous_computed_hash.encode("hex")
-    # print "Roothash: ", rootHash
+    # print "Roothash: ", binascii.unhexlify(rootHash)[::-1].encode("hex")
     # print "Calculated name: ", reverse_computed_name[::-1]
 
     assert previous_computed_hash == binascii.unhexlify(rootHash)[::-1], InvalidProofError("computed hash does not match roothash")
