@@ -25,7 +25,7 @@ from PyQt4.QtCore import *
 import PyQt4.QtCore as QtCore
 
 from lbryum import transaction
-from lbryum.bitcoin import base_encode
+from lbryum.lbrycrd import base_encode
 from lbryum.i18n import _
 from lbryum.plugins import run_hook
 

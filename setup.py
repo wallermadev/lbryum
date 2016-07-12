@@ -39,6 +39,8 @@ setup(
         'protobuf<=3.0.0b2',
         'dnspython',
         'jsonrpclib',
+        'six==1.9.0',
+        'appdirs'
     ],
     packages=[
         'lbryum',

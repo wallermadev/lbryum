@@ -34,7 +34,7 @@ import PyQt4.QtCore as QtCore
 
 import icons_rc
 
-from lbryum.bitcoin import COIN, is_valid, TYPE_ADDRESS
+from lbryum.lbrycrd import COIN, is_valid, TYPE_ADDRESS
 from lbryum.plugins import run_hook
 from lbryum.i18n import _
 from lbryum.util import (block_explorer, block_explorer_info, format_time,
