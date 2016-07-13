@@ -26,8 +26,8 @@ from urlparse import urljoin
 from urllib import quote
 
 import lbryum
-from lbryum import bitcoin
-from lbryum.bitcoin import *
+from lbryum import lbrycrd
+from lbryum.lbrycrd import *
 from lbryum.mnemonic import Mnemonic
 from lbryum import version
 from lbryum.wallet import Multisig_Wallet, BIP32_Wallet
