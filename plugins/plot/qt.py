@@ -5,7 +5,7 @@ from lbryum.i18n import _
 
 import datetime
 from lbryum.util import format_satoshis
-from lbryum.bitcoin import COIN
+from lbryum.lbrycrd import COIN
 
 try:
     import matplotlib.pyplot as plt
