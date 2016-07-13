@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from lbryum.util import format_satoshis, set_verbosity
 from lbryum.util import StoreDict
-from lbryum.bitcoin import is_valid, COIN, TYPE_ADDRESS
+from lbryum.lbrycrd import is_valid, COIN, TYPE_ADDRESS
 from lbryum import Wallet, WalletStorage
 
 _ = lambda x:x
