@@ -3,7 +3,7 @@ from kivy.factory import Factory
 from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 
-from lbryum.bitcoin import RECOMMENDED_FEE
+from lbryum.lbrycrd import RECOMMENDED_FEE
 from lbryum.i18n import _
 
 Builder.load_string('''

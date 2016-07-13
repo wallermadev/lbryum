@@ -4,7 +4,7 @@ from lbryum_gui.qt.util import *
 from lbryum_gui.qt.amountedit import AmountEdit
 
 
-from lbryum.bitcoin import COIN
+from lbryum.lbrycrd import COIN
 from lbryum.i18n import _
 from decimal import Decimal
 from functools import partial

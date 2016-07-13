@@ -5,7 +5,7 @@ from sys import stderr
 from time import sleep
 
 import lbryum
-from lbryum.bitcoin import EncodeBase58Check, DecodeBase58Check, public_key_to_bc_address, bc_address_to_hash_160, TYPE_ADDRESS
+from lbryum.lbrycrd import EncodeBase58Check, DecodeBase58Check, public_key_to_bc_address, bc_address_to_hash_160, TYPE_ADDRESS
 from lbryum.i18n import _
 from lbryum.plugins import BasePlugin, hook
 from lbryum.transaction import deserialize

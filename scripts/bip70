@@ -5,7 +5,7 @@ import time
 import hashlib
 
 from lbryum.transaction import Transaction
-from lbryum import bitcoin
+from lbryum import lbrycrd
 from lbryum import x509
 from lbryum import paymentrequest
 from lbryum import paymentrequest_pb2 as pb2

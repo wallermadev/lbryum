@@ -37,7 +37,7 @@ imp.load_module('lbryum', *imp.find_module('lib'))
 from lbryum import SimpleConfig, Wallet, WalletStorage, format_satoshis
 from lbryum import util
 from lbryum.transaction import Transaction
-from lbryum.bitcoin import base_encode, base_decode
+from lbryum.lbrycrd import base_encode, base_decode
 
 def modal_dialog(title, msg = None):
     droid.dialogCreateAlert(title,msg)

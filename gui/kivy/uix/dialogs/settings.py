@@ -7,7 +7,7 @@ from lbryum.i18n import _
 from lbryum.util import base_units
 from lbryum.i18n import languages, set_language
 from lbryum.plugins import run_hook
-from lbryum.bitcoin import RECOMMENDED_FEE
+from lbryum.lbrycrd import RECOMMENDED_FEE
 
 Builder.load_string('''
 #:import partial functools.partial

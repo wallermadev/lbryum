@@ -42,7 +42,7 @@ from lbryum.util import (block_explorer, block_explorer_info, format_time,
                          format_satoshis_plain, NotEnoughFunds, StoreDict,
                          SilentException)
 from lbryum import Transaction, mnemonic
-from lbryum import util, bitcoin, commands
+from lbryum import util, lbrycrd, commands
 from lbryum import SimpleConfig, COIN_CHOOSERS, paymentrequest
 from lbryum.wallet import Wallet, BIP32_RD_Wallet, Multisig_Wallet
 

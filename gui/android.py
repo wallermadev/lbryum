@@ -25,7 +25,7 @@ from decimal import Decimal
 import datetime, re
 
 from lbryum import SimpleConfig, Wallet, WalletStorage, format_satoshis
-from lbryum.bitcoin import is_address, COIN, TYPE_ADDRESS
+from lbryum.lbrycrd import is_address, COIN, TYPE_ADDRESS
 from lbryum import util
 
 

@@ -24,7 +24,7 @@ import xmlrpclib
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-from lbryum import bitcoin, util
+from lbryum import lbrycrd, util
 from lbryum import transaction
 from lbryum.plugins import BasePlugin, hook
 from lbryum.i18n import _
