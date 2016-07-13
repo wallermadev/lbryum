@@ -8,7 +8,7 @@ from functools import partial
 from struct import pack
 
 from lbryum.account import BIP32_Account
-from lbryum.bitcoin import (bc_address_to_hash_160, xpub_from_pubkey,
+from lbryum.lbrycrd import (bc_address_to_hash_160, xpub_from_pubkey,
                               public_key_to_bc_address, EncodeBase58Check,
                               TYPE_ADDRESS)
 from lbryum.i18n import _
