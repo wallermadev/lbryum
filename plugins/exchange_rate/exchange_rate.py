@@ -8,7 +8,7 @@ import traceback
 import csv
 from decimal import Decimal
 
-from lbryum.bitcoin import COIN
+from lbryum.lbrycrd import COIN
 from lbryum.plugins import BasePlugin, hook
 from lbryum.i18n import _
 from lbryum.util import PrintError, ThreadJob, timestamp_to_datetime
