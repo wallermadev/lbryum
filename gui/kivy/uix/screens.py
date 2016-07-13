@@ -19,7 +19,7 @@ from kivy.factory import Factory
 
 from lbryum.i18n import _
 from lbryum.util import profiler, parse_URI, format_time
-from lbryum import bitcoin
+from lbryum import lbrycrd
 from lbryum.util import timestamp_to_datetime
 from lbryum.plugins import run_hook
 
