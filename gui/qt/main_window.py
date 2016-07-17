@@ -333,7 +333,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         if old_contacts:
             for k in set(old_contacts):
                 l = self.wallet.labels.get(k)
-                if bitcoin.is_address(k) and l:
+                if lbrycrd.is_address(k) and l:
                     self.contacts[l] = ('address', k)
             self.wallet.storage.put('contacts', None)
 
@@ -661,7 +661,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             _('Expiration date of your request.'),
             _('This information is seen by the recipient if you send them a signed payment request.'),
             _('Expired requests have to be deleted manually from your list, in order to free the corresponding Bitcoin addresses.'),
-            _('The bitcoin address never expires and will always be part of this electrum wallet.'),
+            _('The lbrycrd address never expires and will always be part of this electrum wallet.'),
         ])
         grid.addWidget(HelpLabel(_('Request expires'), msg), 3, 0)
         grid.addWidget(self.expires_combo, 3, 1)
@@ -752,7 +752,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             URI += "&exp=%d"%req.get('exp')
         if req.get('name') and req.get('sig'):
             sig = req.get('sig').decode('hex')
-            sig = bitcoin.base_encode(sig, base=58)
+            sig = lbrycrd.base_encode(sig, base=58)
             URI += "&name=" + req['name'] + "&sig="+sig
         return str(URI)
 
@@ -873,7 +873,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
 
 
     def receive_at(self, addr):
-        if not bitcoin.is_address(addr):
+        if not lbrycrd.is_address(addr):
             return
         self.tabs.setCurrentIndex(2)
         self.receive_address_e.setText(addr)
@@ -1201,7 +1201,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             if addr is None:
                 self.show_error(_('Bitcoin Address is None'))
                 return
-            if _type == TYPE_ADDRESS and not bitcoin.is_address(addr):
+            if _type == TYPE_ADDRESS and not lbrycrd.is_address(addr):
                 self.show_error(_('Invalid Bitcoin Address'))
                 return
             if amount is None:
@@ -1396,7 +1396,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         try:
             out = util.parse_URI(unicode(URI), self.on_pr)
         except BaseException as e:
-            self.show_error(_('Invalid bitcoin URI:') + '\n' + str(e))
+            self.show_error(_('Invalid lbrycrd URI:') + '\n' + str(e))
             return
         self.tabs.setCurrentIndex(1)
         r = out.get('r')
@@ -1799,7 +1799,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
                                  'network' : self.network,
                                  'plugins' : self.gui_object.plugins,
                                  'window': self})
-        console.updateNamespace({'util' : util, 'bitcoin':bitcoin})
+        console.updateNamespace({'util' : util, 'lbrycrd':lbrycrd})
 
         c = commands.Commands(self.config, self.wallet, self.network, lambda: self.console.set_json(True))
         methods = {}
@@ -2103,7 +2103,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         try:
             # This can throw on invalid base64
             sig = base64.b64decode(str(signature.toPlainText()))
-            verified = bitcoin.verify_message(address.text(), sig, message)
+            verified = lbrycrd.verify_message(address.text(), sig, message)
         except:
             verified = False
         if verified:
@@ -2161,7 +2161,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
         message = unicode(message_e.toPlainText())
         message = message.encode('utf-8')
         try:
-            encrypted = bitcoin.encrypt_message(message, str(pubkey_e.text()))
+            encrypted = lbrycrd.encrypt_message(message, str(pubkey_e.text()))
             encrypted_e.setText(encrypted)
         except BaseException as e:
             traceback.print_exc(file=sys.stdout)
@@ -2258,14 +2258,14 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, PrintError):
             return
         if not data:
             return
-        # if the user scanned a bitcoin URI
-        if data.startswith("bitcoin:"):
+        # if the user scanned a lbrycrd URI
+        if data.startswith("lbrycrd:"):
             self.pay_to_URI(data)
             return
         # else if the user scanned an offline signed tx
         # transactions are binary, but qrcode seems to return utf8...
         data = data.decode('utf8')
-        z = bitcoin.base_decode(data, length=None, base=43)
+        z = lbrycrd.base_decode(data, length=None, base=43)
         data = ''.join(chr(ord(b)) for b in z).encode('hex')
         tx = self.tx_from_text(data)
         if not tx:
