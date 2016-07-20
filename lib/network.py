@@ -712,7 +712,7 @@ class Network(util.DaemonThread):
         if necessary.
         '''
         local_height, if_height = self.get_local_height(), data['if_height']
-        if if_height <= local_height:
+        if if_height < local_height:
             return False
         elif if_height > local_height + BLOCKS_PER_CHUNK:
             self.request_chunk(interface, data, (local_height + 1) / BLOCKS_PER_CHUNK)
