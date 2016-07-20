@@ -177,6 +177,10 @@ class Network(util.DaemonThread):
         self.heights = {}
         self.merkle_roots = {}
         self.utxo_roots = {}
+
+        # catchup counter, used to track catchup progress before chain is verified and headers saved
+        self.catchup_progress = 0
+
         # callbacks passed with subscriptions
         self.subscriptions = defaultdict(list)
         self.sub_cache = {}
@@ -675,6 +679,7 @@ class Network(util.DaemonThread):
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
                 # If not finished, get the next chunk
                 if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
+                    self.catchup_progress += BLOCKS_PER_CHUNK
                     self.bc_requests.popleft()
                     self.notify('updated')
                 else:
@@ -700,6 +705,7 @@ class Network(util.DaemonThread):
                 if next_height in [True, False]:
                     self.bc_requests.popleft()
                     if next_height:
+                        self.catchup_progress += 1
                         self.notify('updated')
                     else:
                         interface.print_error("header didn't connect, dismissing interface")
@@ -796,6 +802,14 @@ class Network(util.DaemonThread):
 
     def get_local_height(self):
         return self.blockchain.height()
+
+    def get_catchup_progress(self):
+        local_height = self.blockchain.height()
+        remote_height = self.get_server_height()
+        if remote_height > local_height:
+            return local_height + self.catchup_progress
+        else:
+            return local_height
 
     def synchronous_get(self, request, timeout=100000000):
         queue = Queue.Queue()
