@@ -62,7 +62,6 @@ class Blockchain(util.PrintError):
         for header in chain:
             height = header['block_height']
             if self.read_header(height) is not None:
-                print_error("Height: ", height)
                 bits, target = self.get_target(height, prev_header, header)
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
