@@ -653,6 +653,17 @@ class Commands:
     @command('n')
     def getvalueforname(self, name):
         """Return the value of a name, if it has one, and verify its correctness"""
+
+        def _build_response(value, txid, n, amount, height):
+            r = {
+                    'value': value,
+                    'txid': txid,
+                    'n': n,
+                    'amount': amount,
+                    'height': height
+                }
+            return r
+
         def callback(result):
             if 'proof' in result:
                 try:
@@ -667,11 +678,13 @@ class Commands:
                         if result['proof']['txhash'] == computed_txhash:
                             if 0 <= nOut < len(tx['outputs']):
                                 scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
+                                amount = tx['outputs'][nOut]['value']
+                                h = tx['lockTime'] + 1
                                 decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
                                 n, script = decode_claim_script(decoded_script)
                                 decoded_name, decoded_value = n.name, n.value
                                 if decoded_name == name:
-                                    return {'value': decoded_value, 'txid': result['proof']['txhash']}
+                                    return _build_response(decoded_value, computed_txhash, nOut, amount, h)
                                 return {'error': 'name in proof did not match requested name'}
                             return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                         return {'error': "computed txid did not match given transaction: %s vs %s" %
