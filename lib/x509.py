@@ -174,6 +174,10 @@ def load_certificates(ca_path):
     import pem
     ca_list = {}
     ca_keyID = {}
+    if getattr(sys, 'frozen', False):
+        # When frozen for windows distribution, get the include cert
+        import os
+        ca_path = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
     with open(ca_path, 'r') as f:
         s = f.read()
     bList = pem.dePemList(s, "CERTIFICATE")
