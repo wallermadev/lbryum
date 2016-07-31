@@ -29,6 +29,9 @@ import traceback
 import requests
 
 ca_path = requests.certs.where()
+if getattr(sys, 'frozen', False):
+    # When frozen for windows distribution, get the include cert
+    ca_path = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
 
 import util
 import x509
