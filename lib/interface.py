@@ -26,12 +26,13 @@ import threading
 import time
 import traceback
 
-import requests
+import requests.certs
 
-ca_path = requests.certs.where()
-if getattr(sys, 'frozen', False):
+if getattr(sys, 'frozen', False) and os.name == "nt":
     # When frozen for windows distribution, get the include cert
     ca_path = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
+else:
+    ca_path = requests.certs.where()
 
 import util
 import x509

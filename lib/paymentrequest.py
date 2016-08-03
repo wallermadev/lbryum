@@ -18,7 +18,7 @@
 
 
 import hashlib
-import os.path
+import os
 import re
 import sys
 import threading
@@ -27,6 +27,7 @@ import traceback
 import urlparse
 import json
 import requests
+import requests.certs
 
 try:
     import paymentrequest_pb2 as pb2
@@ -44,10 +45,11 @@ import rsakey
 REQUEST_HEADERS = {'Accept': 'application/bitcoin-paymentrequest', 'User-Agent': 'Electrum'}
 ACK_HEADERS = {'Content-Type':'application/bitcoin-payment','Accept':'application/bitcoin-paymentack','User-Agent':'Electrum'}
 
-ca_path = requests.certs.where()
-if getattr(sys, 'frozen', False):
+if getattr(sys, 'frozen', False) and os.name == "nt":
     # When frozen for windows distribution, get the include cert
     ca_path = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
+else:
+    ca_path = requests.certs.where()
 ca_list, ca_keyID = x509.load_certificates(ca_path)
 
 
