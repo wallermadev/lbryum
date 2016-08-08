@@ -705,6 +705,11 @@ class Commands:
         return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
 
     @command('n')
+    def getclaimsforname(self, name):
+        """Return all claims and supports for a name"""
+        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
+
+    @command('n')
     def getblock(self, blockhash):
         """Return a block matching the given blockhash"""
         return self.network.synchronous_get(('blockchain.block.get_block', [blockhash]))
