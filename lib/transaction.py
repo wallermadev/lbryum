@@ -772,13 +772,13 @@ class Transaction:
 
         elif for_sig==i:
             script_type = TYPE_ADDRESS
-            if txin['is_claim']:
+            if 'is_claim' in txin and txin['is_claim']:
                 script_type |= TYPE_CLAIM
                 address = ((txin['claim_name'], txin['claim_value']), address)
-            elif txin['is_support']:
+            elif 'is_support' in txin and txin['is_support']:
                 script_type |= TYPE_SUPPORT
                 address = ((txin['claim_name'], txin['claim_id']), address)
-            elif txin['is_update']:
+            elif 'is_update' in txin and txin['is_update']:
                 script_type |= TYPE_UPDATE
                 address = ((txin['claim_name'], txin['claim_id'], txin['claim_value']), address)
             script = txin['redeemScript'] if p2sh else self.pay_script(script_type, address)

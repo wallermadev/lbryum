@@ -11,8 +11,7 @@ class Test_NewMnemonic(unittest.TestCase):
     def test_to_seed(self):
         seed = mnemonic.Mnemonic.mnemonic_to_seed(mnemonic='foobar', passphrase='none')
         self.assertEquals(seed.encode('hex'),
-                          '741b72fd15effece6bfe5a26a52184f66811bd2be363190e07a42cca442b1a5b'
-                          'b22b3ad0eb338197287e6d314866c7fba863ac65d3f156087a5052ebc7157fce')
+                          'd4ed91101deb98cdaf516814360cc167419ce4e70da9920d83da4a2ae1cdf6d9198d45a25f4051f6e75435ec7c3e2587ab540be3c4da3f1b3d37830e2612a025')
 
     def test_random_seeds(self):
         iters = 10

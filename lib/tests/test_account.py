@@ -43,7 +43,7 @@ class Test_Account(unittest.TestCase):
         self.assertEquals(a.dump(), v)
         self.assertEquals(a.get_master_pubkeys(), [v['xpub']])
         self.assertEquals(a.first_address(),
-                          ('1EtJphMVpes4UKm8bYu5D1fGvNoTSJM3ZL', v['receiving'][0]))
+                          ('bScaWvgzAzFXzAcVgDDARfo9RFhdrm4pVc', v['receiving'][0]))
 
         xprv = 'xprv9s21ZrQH143K2eGb6FZ81nLW44cyy7mrAiqg4VB4pQKDrmizjc1pSuynnpeiaMPdZxvrfvdBi5oqFi9hmsV7MrsVquKkruQ7TJPCfVuPSdw'
         storage = dict(
@@ -94,10 +94,10 @@ class Test_Account(unittest.TestCase):
 
         a = account.OldAccount(v)
         self.assertEquals(a.get_master_pubkeys(), [v['mpk']])
-        self.assertEquals(a.get_address(for_change=0, n=0), '1FHsTashEBUNPQwC1CwVjnKUxzwgw73pU4')
-        self.assertEquals(a.get_address(for_change=0, n=2), '1Got6wbjxQ592WfwLcfLLxn3aTetLzpTom')
-        self.assertEquals(a.get_address(for_change=1, n=0), '16RyjNDNEwwWkv6mvptvxT9qNN5shJxcxo')
-        self.assertEquals(a.get_address(for_change=1, n=3), '1M6kHXnzmiUNsoYKZgzPDVpsSmMcfKFiiM')
+        self.assertEquals(a.get_address(for_change=0, n=0), 'bT299pDBaWrquFnZ5sFaxSTMTsqsTjRims')
+        self.assertEquals(a.get_address(for_change=0, n=2), 'bUY9oAwEJjTcYMXJRGyRZcuv5LZ4jKyQnD')
+        self.assertEquals(a.get_address(for_change=1, n=0), 'bJAFRbYrbHKzGkx91VD2B7HhsEz47q22zZ')
+        self.assertEquals(a.get_address(for_change=1, n=3), 'bYq1ym8V83rrPePgeMJUS9xjweFo5rUvqV')
 
         self.assertTrue(a.check_seed(seed))
         with self.assertRaises(account.InvalidPassword):
