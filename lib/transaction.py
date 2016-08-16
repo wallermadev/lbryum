@@ -445,7 +445,9 @@ def decode_claim_script(decoded_script):
     if decoded_script[op][0] != opcodes.OP_2DROP:
         return False
     op += 1
-    if decoded_script[op][0] != opcodes.OP_DROP:
+    if decoded_script[op][0] != opcodes.OP_DROP and decoded_script[0][0] == opcodes.OP_CLAIM_NAME:
+        return False
+    elif decoded_script[op][0] != opcodes.OP_2DROP and decoded_script[0][0] == opcodes.OP_UPDATE_CLAIM:
         return False
     op += 1
     if decoded_script[0][0] == opcodes.OP_CLAIM_NAME:

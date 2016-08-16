@@ -670,6 +670,7 @@ class Commands:
                     verify_proof(result['proof'], block_header['claim_trie_root'], name)
                 except InvalidProofError:
                     return {'error': "Proof was invalid"}
+                support_amount = sum(samount for stxid, sn, samount in result['supports'])
                 if 'txhash' in result['proof'] and 'nOut' in result['proof']:
                     if 'transaction' in result:
                         computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
@@ -679,12 +680,13 @@ class Commands:
                             if 0 <= nOut < len(tx['outputs']):
                                 scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
                                 amount = tx['outputs'][nOut]['value']
+                                effective_amount = amount + support_amount
                                 h = tx['lockTime'] + 1
                                 decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
                                 n, script = decode_claim_script(decoded_script)
                                 decoded_name, decoded_value = n.name, n.value
                                 if decoded_name == name:
-                                    return _build_response(decoded_value, computed_txhash, nOut, amount, h)
+                                    return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
                                 return {'error': 'name in proof did not match requested name'}
                             return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                         return {'error': "computed txid did not match given transaction: %s vs %s" %
@@ -703,6 +705,11 @@ class Commands:
     def getclaimsfromtx(self, txid):
         """Return the claims which are in a transaction"""
         return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+
+    @command('n')
+    def getclaimsforname(self, name):
+        """Return all claims and supports for a name"""
+        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
 
     @command('n')
     def getblock(self, blockhash):
