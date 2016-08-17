@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from lbryum import WalletStorage
-from lbryum.plugins import run_hook
+from wallet import WalletStorage
+from plugins import run_hook
 from util import PrintError
 from wallet import Wallet, wallet_types
 from i18n import _

@@ -1,5 +1,5 @@
 import binascii
-from lbryum.lbrycrd import Hash
+from lbrycrd import Hash
 from transaction import opcodes
 
 
@@ -70,3 +70,4 @@ def verify_proof(proof, rootHash, name):
         assert name == reverse_computed_name[::-1], InvalidProofError("name did not match proof")
     assert name.startswith(reverse_computed_name[::-1]), InvalidProofError("name fragment does not match proof")
     return True
+

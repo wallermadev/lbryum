@@ -172,7 +172,7 @@ class Test_keyImport(unittest.TestCase):
 
     private_key = "L52XzL2cMkHxqxBXRyEpnPQZGUs3uKiL3R11XbAdHigRzDozKZeW"
     public_key_hex = "0339a36013301597daef41fbe593a02cc513d0b55527ec2df1050e2e8ff49c85c2"
-    main_address = "15mKKb2eos1hWa6tisdPwwDC1a5J1y9nma"
+    main_address = "bHVb1pN9ACQB2QxFoXwVAbM4WSyUVVDfbW"
 
     def test_public_key_from_private_key(self):
         result = public_key_from_private_key(self.private_key)
