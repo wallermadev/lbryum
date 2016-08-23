@@ -18,6 +18,7 @@
 
 
 from datetime import datetime
+import os
 import sys
 
 import util
@@ -174,6 +175,11 @@ def load_certificates(ca_path):
     import pem
     ca_list = {}
     ca_keyID = {}
+    if getattr(sys, 'frozen', False) and os.name == "nt":
+        # When frozen for windows distribution, get the include cert
+        ca_path = os.path.join(os.path.dirname(sys.executable), 'cacert.pem')
+    else:
+        ca_path = ca_path
     with open(ca_path, 'r') as f:
         s = f.read()
     bList = pem.dePemList(s, "CERTIFICATE")
