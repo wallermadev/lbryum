@@ -683,7 +683,10 @@ class Commands:
                                 effective_amount = amount + support_amount
                                 h = tx['lockTime'] + 1
                                 decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
-                                n, script = decode_claim_script(decoded_script)
+                                decode_out = decode_claim_script(decoded_script)
+                                if decode_out is False:                                    
+                                    return {'error': 'failed to decode as claim script'} 
+                                n,script = decode_out
                                 decoded_name, decoded_value = n.name, n.value
                                 if decoded_name == name:
                                     return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
