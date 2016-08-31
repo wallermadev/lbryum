@@ -925,6 +925,7 @@ class Abstract_Wallet(PrintError):
                     expired = tx_height + lbrycrd.EXPIRATION_BLOCKS <= local_height
                     output = {
                         'txid': prevout_hash,
+                        'nOut': int(prevout_n),
                         'address': addr,
                         'category': "name",
                         'amount': float(value)/COIN,
