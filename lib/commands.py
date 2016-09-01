@@ -278,12 +278,12 @@ class Commands:
         return self.wallet.get_public_keys(address)
 
     @command('w')
-    def getbalance(self, account=None):
+    def getbalance(self, account=None, exclude_claimtrietx=False):
         """Return the balance of your wallet. """
         if account is None:
-            c, u, x = self.wallet.get_balance()
+            c, u, x = self.wallet.get_balance(exclude_claimtrietx=exclude_claimtrietx)
         else:
-            c, u, x = self.wallet.get_account_balance(account)
+            c, u, x = self.wallet.get_account_balance(account,exclude_claimtrietx)
         out = {"confirmed": str(Decimal(c)/COIN)}
         if u:
             out["unconfirmed"] = str(Decimal(u)/COIN)
@@ -780,6 +780,7 @@ param_descriptions = {
     'amount': 'Amount to be sent (in BTC). Type \'!\' to send the maximum available.',
     'requested_amount': 'Requested amount (in BTC).',
     'outputs': 'list of ["address", amount]',
+    'exclude_claimtrietx': 'Exclude claimtrie transactions.',
 }
 
 command_options = {
@@ -809,6 +810,7 @@ command_options = {
     'pending':     (None, "--pending",     "Show only pending requests."),
     'expired':     (None, "--expired",     "Show only expired requests."),
     'paid':        (None, "--paid",        "Show only paid requests."),
+    'exclude_claimtrietx':(None,"--exclude_claimtrietx", "Exclude claimtrie transactions"),
 }
 
 
