@@ -32,7 +32,7 @@ import util
 from util import print_msg, format_satoshis, print_stderr
 import lbrycrd
 from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
-from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE
+from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE, RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
 from transaction import Transaction
 from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
 import paymentrequest
@@ -698,7 +698,7 @@ class Commands:
                     return {'error': "didn't receive a transaction with the proof"}
                 return {'value': {}}
             return {'error': "proof not in result"}
-        height = self.network.get_local_height()
+        height = self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
         block_header = self.network.blockchain.read_header(height)
         blockhash = self.network.blockchain.hash_header(block_header)
         response = self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
