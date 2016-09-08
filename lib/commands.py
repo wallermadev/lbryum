@@ -449,7 +449,6 @@ class Commands:
         """Create and broadcast transaction. """
         domain = [from_addr] if from_addr else None
         tx = self._mktx([(destination, amount)], tx_fee, change_addr, domain, nocheck, unsigned)
-        self.wallet.add_transaction(Hash(str(tx)).encode('hex'), tx)
         return self.network.synchronous_get(('blockchain.transaction.broadcast', [str(tx)]))
 
     @command('wp')
