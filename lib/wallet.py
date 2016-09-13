@@ -962,6 +962,9 @@ class Abstract_Wallet(PrintError):
                         claim_name, claim_value = txout[1][0]
                         output['name'] = claim_name
                         output['value'] = claim_value
+                        claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nOut']) 
+                        claim_id = lbrycrd.rev_hex(claim_id.encode('hex'))
+                        output['claim_id'] = claim_id
                     elif txout[0] & TYPE_SUPPORT:
                         claim_name, claim_id = txout[1][0]
                         output['name'] = claim_name
