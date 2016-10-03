@@ -70,18 +70,18 @@ class SimpleConfig(object):
             self.system_config = read_system_config_function()
 
         # Set self.path and read the user config
-        self.user_config = {}  # for self.get in electrum_path()
-        self.path = self.electrum_path()
+        self.user_config = {}  # for self.get in lbryum_path()
+        self.path = self.lbryum_path()
         self.user_config = read_user_config_function(self.path)
         # Upgrade obsolete keys
         self.fixup_keys({'auto_cycle': 'auto_connect'})
         # Make a singleton instance of 'self'
         set_config(self)
 
-    def electrum_path(self):
-        # Read electrum_path from command line / system configuration
+    def lbryum_path(self):
+        # Read lbryum_path from command line / system configuration
         # Otherwise use the user's default data directory.
-        path = self.get('electrum_path')
+        path = self.get('lbryum_path')
         if path is None:
             path = self.user_dir()
 
