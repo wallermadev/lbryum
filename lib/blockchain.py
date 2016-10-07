@@ -21,10 +21,12 @@ import os
 import util
 from lbrycrd import *
 
+NULL_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
 MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 HEADER_SIZE = 112
 BLOCKS_PER_CHUNK = 96
 
+HEADERS_URL = "https://s3.amazonaws.com/lbry-blockchain-headers/blockchain_headers_latest"
 
 class Blockchain(util.PrintError):
     '''Manages blockchain headers and their verification'''
@@ -32,7 +34,7 @@ class Blockchain(util.PrintError):
     def __init__(self, config, network):
         self.config = config
         self.network = network
-        self.headers_url = "https://s3.amazonaws.com/lbry-blockchain-headers/blockchain_headers_latest"
+        self.headers_url = HEADERS_URL
         self.local_height = 0
         self.set_local_height()
         self.retrieving_headers = False
@@ -78,9 +80,17 @@ class Blockchain(util.PrintError):
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
+    def get_block_hash(self, header):
+        block_hash = header.get('prev_block_hash')
+        if block_hash:
+            return block_hash
+        else:
+            assert header.get('block_height') == 0
+            return NULL_HASH
+
     def serialize_header(self, res):
         s = int_to_hex(res.get('version'), 4) \
-            + rev_hex(res.get('prev_block_hash')) \
+            + rev_hex(self.get_block_hash(res)) \
             + rev_hex(res.get('merkle_root')) \
             + rev_hex(res.get('claim_trie_root')) \
             + int_to_hex(int(res.get('timestamp')), 4) \
@@ -214,30 +224,37 @@ class Blockchain(util.PrintError):
         successfully connected, False if verification failed, otherwise the
         height of the next header needed.'''
         chain.append(header)  # Ordered by decreasing height
-        previous_height = header['block_height'] - 1
-        previous_header = self.read_header(previous_height)
+        height = header['block_height']
+        if height > 0 and self.need_previous(header):
+            return height - 1
+        # The chain is complete so we can save it
+        return self.save_chain(chain, height)
 
-        # Missing header, request it
-        if not previous_header:
-            return previous_height
-
-        # Does it connect to my chain?
-        prev_hash = self.hash_header(previous_header)
-        if prev_hash != header.get('prev_block_hash'):
-            self.print_error("reorg")
-            return previous_height
-
-        # The chain is complete.  Reverse to order by increasing height
+    def save_chain(self, chain, height):
+        # Reverse to order by increasing height
         chain.reverse()
         try:
             self.verify_chain(chain)
-            self.print_error("connected at height:", previous_height)
+            self.print_error("connected at height:", height)
             for header in chain:
                 self.save_header(header)
             return True
         except BaseException as e:
             self.print_error(str(e))
             return False
+
+    def need_previous(self, header):
+        """Return True if we're missing the block before the one we just got"""
+        previous_height = header['block_height'] - 1
+        previous_header = self.read_header(previous_height)
+        # Missing header, request it
+        if not previous_header:
+            return True
+        # Does it connect to my chain?
+        prev_hash = self.hash_header(previous_header)
+        if prev_hash != header.get('prev_block_hash'):
+            self.print_error("reorg")
+            return True
 
     def connect_chunk(self, idx, hexdata):
         try:
