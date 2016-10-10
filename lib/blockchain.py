@@ -64,7 +64,7 @@ class Blockchain(util.PrintError):
         for header in chain:
             height = header['block_height']
             if self.read_header(height) is not None:
-                bits, target = self.get_target(height, prev_header, header)
+                bits, target = self.get_target(height, prev_header, header, self.config.get('chain'))
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
@@ -75,7 +75,7 @@ class Blockchain(util.PrintError):
         for i in range(BLOCKS_PER_CHUNK):
             raw_header = data[i * HEADER_SIZE:(i + 1) * HEADER_SIZE]
             header = self.deserialize_header(raw_header)
-            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header)
+            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header, self.config.get('chain'))
             if header is not None:
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
@@ -181,7 +181,7 @@ class Blockchain(util.PrintError):
                 h = self.deserialize_header(h)
                 return h
 
-    def get_target(self, index, first, last):
+    def get_target(self, index, first, last, chain='main'):
         # print_error("Get target for block ", index)
         if index == 0:
             return 0x1f00ffff, MAX_TARGET
@@ -196,7 +196,12 @@ class Blockchain(util.PrintError):
         target = bitsBase << (8 * (bitsN - 3))
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 150
+        # regtest has target timespan of 1, so that blocks are quickly generated
+        # otherwise , target is 2min 30 seconds 
+        if chain == 'regtest':
+            nTargetTimespan = 1
+        else:
+            nTargetTimespan = 150
         nModulatedTimespan = nTargetTimespan - (nActualTimespan - nTargetTimespan) / 8
         nMinTimespan = nTargetTimespan - (nTargetTimespan / 8)
         nMaxTimespan = nTargetTimespan + (nTargetTimespan / 2)
