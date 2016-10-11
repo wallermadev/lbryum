@@ -9,7 +9,7 @@ from util import user_dir, print_error, print_msg, print_stderr
 SYSTEM_CONFIG_PATH = "/etc/lbryum.conf"
 
 config = None
-
+NULL = object()
 
 def get_config():
     global config
@@ -20,6 +20,13 @@ def set_config(c):
     global config
     config = c
 
+DEFAULT_CONFIG = {
+    'default_servers': {
+        'lbryum1.lbry.io': {'t': '50001'},
+        'lbryum2.lbry.io': {'t': '50001'},
+        'lbryum3.lbry.io': {'t': '50001'},
+    }
+}
 
 class SimpleConfig(object):
     """
@@ -34,8 +41,9 @@ class SimpleConfig(object):
     override config set in 3.)
     """
     def __init__(self, options={}, read_system_config_function=None,
-                 read_user_config_function=None, read_user_dir_function=None):
-
+                 read_user_config_function=None, read_user_dir_function=None,
+                 default_config=None):
+        default_config = default_config if default_config is not None else DEFAULT_CONFIG
         # This lock needs to be acquired for updating and reading the config in
         # a thread-safe way.
         self.lock = threading.RLock()
@@ -53,6 +61,7 @@ class SimpleConfig(object):
 
         # The command line options
         self.cmdline_options = deepcopy(options)
+        self.default_config = deepcopy(default_config)
 
         # Portable wallets don't use a system config
         if self.cmdline_options.get('portable', False):
@@ -61,18 +70,18 @@ class SimpleConfig(object):
             self.system_config = read_system_config_function()
 
         # Set self.path and read the user config
-        self.user_config = {}  # for self.get in electrum_path()
-        self.path = self.electrum_path()
+        self.user_config = {}  # for self.get in lbryum_path()
+        self.path = self.lbryum_path()
         self.user_config = read_user_config_function(self.path)
         # Upgrade obsolete keys
         self.fixup_keys({'auto_cycle': 'auto_connect'})
         # Make a singleton instance of 'self'
         set_config(self)
 
-    def electrum_path(self):
-        # Read electrum_path from command line / system configuration
+    def lbryum_path(self):
+        # Read lbryum_path from command line / system configuration
         # Otherwise use the user's default data directory.
-        path = self.get('electrum_path')
+        path = self.get('lbryum_path')
         if path is None:
             path = self.user_dir()
 
@@ -112,13 +121,18 @@ class SimpleConfig(object):
         return
 
     def get(self, key, default=None):
+        configs = (
+            self.cmdline_options,
+            self.user_config,
+            self.system_config,
+            self.default_config,
+        )
         with self.lock:
-            out = self.cmdline_options.get(key)
-            if out is None:
-                out = self.user_config.get(key)
-                if out is None:
-                    out = self.system_config.get(key, default)
-        return out
+            for config in configs:
+                out = config.get(key, NULL)
+                if out is not NULL:
+                    break
+        return out if out is not NULL else default
 
     def is_modifiable(self, key):
         return not key in self.cmdline_options

@@ -24,23 +24,18 @@ log = logging.getLogger("lbryum")
 
 DEFAULT_PORTS = {'t': '50001', 's': '50002', 'h': '8081', 'g': '8082'}
 
-DEFAULT_SERVERS = {
-    'lbryum1.lbry.io': {'t': '50001'},
-    'lbryum2.lbry.io': {'t': '50001'},
-    'lbryum3.lbry.io': {'t': '50001'},
-}
 
-#Do an initial pruning of lbryum servers that don't have the specified port open
-ONLINE_SERVERS = {}
-for host in DEFAULT_SERVERS:
+def is_online(host, ports):
     ip = socket.gethostbyname(host)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)
-    result = sock.connect_ex((ip, int(DEFAULT_SERVERS[host]['t'])))
+    result = sock.connect_ex((ip, int(ports['t'])))
     sock.close()
     if result == 0:
-        log.info("%s:%s is online" % (host, DEFAULT_SERVERS[host]['t']))
-        ONLINE_SERVERS[host] = DEFAULT_SERVERS[host]
+        log.info("%s:%s is online" % (host, ports['t']))
+        return True
+    return False
+
 
 NODES_RETRY_INTERVAL = 60
 SERVER_RETRY_INTERVAL = 10
@@ -77,7 +72,7 @@ def parse_servers(result):
 
     return servers
 
-def filter_protocol(hostmap = ONLINE_SERVERS, protocol = 's'):
+def filter_protocol(hostmap, protocol = 's'):
     '''Filters the hostmap for those implementing protocol.
     The result is a list in serialized form.'''
     eligible = []
@@ -89,7 +84,7 @@ def filter_protocol(hostmap = ONLINE_SERVERS, protocol = 's'):
 
 
 # noinspection PyPep8
-def pick_random_server(hostmap = DEFAULT_SERVERS, protocol = 't', exclude_set = set()):
+def pick_random_server(hostmap, protocol = 't', exclude_set = set()):
     eligible = list(set(filter_protocol(hostmap, protocol)) - exclude_set)
     return random.choice(eligible) if eligible else None
 
@@ -162,7 +157,10 @@ class Network(util.DaemonThread):
         except:
             self.default_server = None
         if not self.default_server:
-            self.default_server = pick_random_server()
+            default_servers = self.config.get('default_servers')
+            if not default_servers:
+                raise ValueError('No servers have been specified')
+            self.default_server = pick_random_server(default_servers)
 
         self.lock = Lock()
         self.pending_sends = []
@@ -206,6 +204,8 @@ class Network(util.DaemonThread):
         self.auto_connect = self.config.get('auto_connect', False)
         self.connecting = set()
         self.socket_queue = Queue.Queue()
+        self.online_servers = {}
+        self._set_online_servers()
         self.start_network(deserialize_server(self.default_server)[2],
                            deserialize_proxy(self.config.get('proxy')))
 
@@ -331,11 +331,19 @@ class Network(util.DaemonThread):
         '''The interfaces that are in connected state'''
         return self.interfaces.keys()
 
+    #Do an initial pruning of lbryum servers that don't have the specified port open
+    def _set_online_servers(self):
+        servers = self.config.get('default_servers', {}).iteritems()
+        self.online_servers = {
+            host: ports for host, ports in servers
+            if is_online(host, ports)
+        }
+
     def get_servers(self):
         if self.irc_servers:
             out = self.irc_servers
         else:
-            out = ONLINE_SERVERS
+            out = self.online_servers
             for s in self.recent_servers:
                 try:
                     host, port, protocol = deserialize_server(s)
