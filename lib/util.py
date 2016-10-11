@@ -41,11 +41,11 @@ class PrintError(object):
         return self.__class__.__name__
 
     def print_error(self, *msg):
-        log.info("[%s] " % str(datetime.now()) + " ".join([str(m) for m in list(msg)]))
+        log.info(" ".join([str(m) for m in list(msg)]))
         print_error("[%s]" % self.diagnostic_name(), *msg)
 
     def print_msg(self, *msg):
-        log.info("[%s] " % str(datetime.now()) + " ".join([str(m) for m in list(msg)]))
+        log.info(" ".join([str(m) for m in list(msg)]))
         print_msg("[%s]" % self.diagnostic_name(), *msg)
 
 class ThreadJob(PrintError):
