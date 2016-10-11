@@ -52,8 +52,17 @@ RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS = 6
 EncodeAES = lambda secret, s: base64.b64encode(aes.encryptData(secret,s))
 DecodeAES = lambda secret, e: aes.decryptData(secret, base64.b64decode(e))
 
+# get the claim id hash from txid bytes and int n 
 def claim_id_hash(txid, n):
     return hash_160(txid + struct.pack('>I',n))
+
+# deocde a claim_id hex string 
+def decode_claim_id_hex(claim_id_hex):
+    return rev_hex(claim_id_hex).decode('hex')
+
+# encode claim id bytes into hex string
+def encode_claim_id_hex(claim_id):
+    return rev_hex(claim_id.encode('hex'))
 
 
 def strip_PKCS7_padding(s):
