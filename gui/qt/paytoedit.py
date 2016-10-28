@@ -77,11 +77,11 @@ class PayToEdit(ScanQRTextEdit):
         if n:
             script = str(n.group(1)).decode('hex')
             amount = self.parse_amount(y)
-            return bitcoin.TYPE_SCRIPT, script, amount
+            return lbrycrd.TYPE_SCRIPT, script, amount
         else:
             address = self.parse_address(x)
             amount = self.parse_amount(y)
-            return bitcoin.TYPE_ADDRESS, address, amount
+            return lbrycrd.TYPE_ADDRESS, address, amount
 
     def parse_amount(self, x):
         p = pow(10, self.amount_edit.decimal_point())
@@ -91,7 +91,7 @@ class PayToEdit(ScanQRTextEdit):
         r = line.strip()
         m = re.match('^'+RE_ALIAS+'$', r)
         address = str(m.group(2) if m else r)
-        assert bitcoin.is_address(address)
+        assert lbrycrd.is_address(address)
         return address
 
     def check_text(self):
@@ -149,7 +149,7 @@ class PayToEdit(ScanQRTextEdit):
                 amount = self.amount_edit.get_amount()
             except:
                 amount = None
-            self.outputs = [(bitcoin.TYPE_ADDRESS, self.payto_address, amount)]
+            self.outputs = [(lbrycrd.TYPE_ADDRESS, self.payto_address, amount)]
 
         return self.outputs[:]
 
