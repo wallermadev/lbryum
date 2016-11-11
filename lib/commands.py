@@ -723,6 +723,24 @@ class Commands:
     def getclaimtrie(self):
         """Return the entire claim trie"""
         return self.network.synchronous_get(('blockchain.claimtrie.get', []))
+    """
+    get claim by claim id
+    Args:
+    claim_id : claim id of claim
+
+    Output:
+    None if no claim exists with the claim id, otherwise return dict with below contents
+    claimId: claim id of claim
+    depth: block height of claim
+    in claim trie: True if found in claimtrie
+    is controlling: True if controlling claim
+    nOut: nout of claim
+    name: name of claim
+    value: value of claim 
+    """
+    @command('n')
+    def getclaimbyid(self, claim_id):
+        return self.network.synchronous_get(('blockchain.claimtrie.getclaimbyid', [claim_id]))
 
     @command('w')
     def getnameclaims(self):
@@ -1034,7 +1052,6 @@ class Commands:
         if not success:
             return {'success':False,'reason':out}
         return {'success':True,'txid':tx.hash(),'fee':str(Decimal(tx.get_fee())/COIN)}
-
 
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',
