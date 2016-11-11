@@ -695,7 +695,7 @@ class Commands:
                                          (computed_txhash, result['proof']['txhash'])
                         }
                     return {'error': "didn't receive a transaction with the proof"}
-                return {'value': {}}
+                return {'error':'name is not claimed'}
             return {'error': "proof not in result"}
         height = self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
         block_header = self.network.blockchain.read_header(height)
