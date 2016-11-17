@@ -254,5 +254,5 @@ class TestUserConfig(unittest.TestCase):
         with open(thefile, "w") as f:
             f.write(repr(payload))
 
-        result = read_user_config(self.user_dir)
-        self.assertEqual({}, result)
+        with self.assertRaises(Exception):
+            result = read_user_config(self.user_dir)
