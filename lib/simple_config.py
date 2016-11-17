@@ -208,20 +208,17 @@ def read_user_config(path):
     if not path:
         return {}
     config_path = os.path.join(path, "config")
-    try:
-        with open(config_path, "r") as f:
-            data = f.read()
-    except IOError:
-        #print_msg("Error: Cannot read config file.", path)
+    if not os.path.exists(config_path):
         return {}
+    with open(config_path, "r") as f:
+        data = f.read()
     try:
         result = json.loads(data)
-    except:
+    except Exception:
         try:
             result = ast.literal_eval(data)
-        except:
-            #print_msg("Error: Cannot read config file.")
-            return {}
+        except Exception:
+            raise Exception('Failed to parse config file {}'.format(config_path))
     if not type(result) is dict:
-        return {}
+        raise Exception('User config must be a dictionary')
     return result

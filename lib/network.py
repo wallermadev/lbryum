@@ -17,7 +17,7 @@ import logging
 import util
 from lbrycrd import *
 from interface import Connection, Interface
-from blockchain import Blockchain, BLOCKS_PER_CHUNK
+from blockchain import get_blockchain, BLOCKS_PER_CHUNK
 from version import LBRYUM_VERSION, PROTOCOL_VERSION
 
 log = logging.getLogger("lbryum")
@@ -145,7 +145,7 @@ class Network(util.DaemonThread):
         util.DaemonThread.__init__(self)
         self.config = SimpleConfig(config) if type(config) == type({}) else config
         self.num_server = 8 if not self.config.get('oneserver') else 0
-        self.blockchain = Blockchain(self.config, self)
+        self.blockchain = get_blockchain(self.config, self)
         # A deque of interface header requests, processed left-to-right
         self.bc_requests = deque()
         # Server for addresses and transactions
