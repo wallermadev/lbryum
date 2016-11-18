@@ -15,18 +15,3 @@ import wizard as wizard
 import sys
 import os
 from appdirs import user_data_dir
-import logging
-
-if sys.platform != "darwin":
-    log_dir = os.path.join(os.path.expanduser("~"), ".lbrynet")
-else:
-    log_dir = user_data_dir("LBRY")
-
-if not os.path.isdir(log_dir):
-    os.mkdir(log_dir)
-
-LOG_PATH = os.path.join(log_dir, 'lbryum.log')
-
-log = logging.getLogger("lbryum")
-log.addHandler(logging.FileHandler(filename=LOG_PATH))
-log.setLevel(logging.INFO)
