@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import collections
 import hashlib
 import base64
 import re
 import hmac
-import struct 
+import struct
 
 import version
 from util import print_error, InvalidPassword
@@ -52,11 +53,11 @@ RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS = 6
 EncodeAES = lambda secret, s: base64.b64encode(aes.encryptData(secret,s))
 DecodeAES = lambda secret, e: aes.decryptData(secret, base64.b64decode(e))
 
-# get the claim id hash from txid bytes and int n 
+# get the claim id hash from txid bytes and int n
 def claim_id_hash(txid, n):
     return hash_160(txid + struct.pack('>I',n))
 
-# deocde a claim_id hex string 
+# deocde a claim_id hex string
 def decode_claim_id_hex(claim_id_hex):
     return rev_hex(claim_id_hex).decode('hex')
 
