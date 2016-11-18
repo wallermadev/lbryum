@@ -256,16 +256,20 @@ def public_key_to_bc_address(public_key):
     return hash_160_to_bc_address(h160)
 
 
-#lbrycrd/src/chainparams.cpp line 176
-PUBKEY_ADDRESS = (0, 85)
-SCRIPT_ADDRESS = (5, 122)
+# lbrycrd/src/chainparams.cpp line 176
+#
+# TEMPORARY: these values have been changed
+# to match regtest
+Address = collections.namedtuple('Address', 'addrtype char')
+PUBKEY_ADDRESS = Address(0, chr(111))
+SCRIPT_ADDRESS = Address(5, chr(196))
 
 
 def hash_160_to_bc_address(h160, addrtype=0):
-    if addrtype == PUBKEY_ADDRESS[0]:
-        c = chr(PUBKEY_ADDRESS[1])
-    elif addrtype == SCRIPT_ADDRESS[0]:
-        c = chr(SCRIPT_ADDRESS[1])
+    if addrtype == PUBKEY_ADDRESS.addrtype:
+        c = PUBKEY_ADDRESS.char
+    elif addrtype == SCRIPT_ADDRESS.addrtype:
+        c = SCRIPT_ADDRESS.char
 
     vh160 = c + h160
     h = Hash(vh160)
@@ -275,10 +279,10 @@ def hash_160_to_bc_address(h160, addrtype=0):
 
 def bc_address_to_hash_160(addr):
     bytes = base_decode(addr, 25, base=58)
-    if bytes[0] == chr(PUBKEY_ADDRESS[1]):
-        return PUBKEY_ADDRESS[0], bytes[1:21]
-    elif bytes[0] == chr(SCRIPT_ADDRESS[1]):
-        return SCRIPT_ADDRESS[0], bytes[1:21]
+    if bytes[0] == PUBKEY_ADDRESS.char:
+        return PUBKEY_ADDRESS.addrtype, bytes[1:21]
+    elif bytes[0] == SCRIPT_ADDRESS.char:
+        return SCRIPT_ADDRESS.addrtype, bytes[1:21]
 
 
 __b58chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
