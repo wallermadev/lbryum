@@ -651,6 +651,51 @@ class Abstract_Wallet(PrintError):
         return c, u, x
 
 
+    # get coin object in order to abandon calimtrie transactions
+    # equivalent of get_spendable_coins but for claimtrie utxos 
+    def get_spendable_claimtrietx_coin(self, txid, nOut):
+        tx = self.transactions.get(txid) 
+        if tx is None:
+            raise BaseException('txid was not found in wallet') 
+        tx.deserialize()
+        txouts = tx.outputs()
+        if len(txouts) < nOut+1: 
+            raise BaseException('nOut is too large')             
+        txout = txouts[nOut] 
+        txout_type,txout_dest,txout_value = txout
+        if not (txout_type & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT)):
+            raise BaseException('txid and nOut does not refer to a claimtrie transaction') 
+
+        address = txout_dest[1]
+        utxos = self.get_addr_utxo(address)
+        if txid+':'+str(nOut) not in utxos:
+            raise BaseException('this claimtrie transaction has already been spent')  
+
+        # create inputs 
+        is_update = txout_type & TYPE_UPDATE
+        is_claim = txout_type & TYPE_CLAIM
+        is_support = txout_type & TYPE_SUPPORT
+
+        i= {'prevout_hash':txid , 'prevout_n':nOut, 'address':address, 'value':txout_value,
+            'is_update':is_update, 'is_claim':is_claim, 'is_support':is_support}
+        if is_claim:
+            i['claim_name'] = txout_dest[0][0]
+            i['claim_value'] = txout_dest[0][1]
+        elif is_support:
+            i['claim_name'] = txout_dest[0][0]
+            i['claim_id'] = txout_dest[0][1]
+        elif is_update:
+            i['claim_name'] = txout_dest[0][0]
+            i['claim_id'] = txout_dest[0][1]
+            i['claim_value'] = txout_dest[0][2]
+        else:
+            #should not reach here
+            assert(0)
+
+        self.add_input_info(i)
+        return i 
+
+    
     # noinspection PyPep8
     def get_spendable_coins(self, domain = None, exclude_frozen = True, abandon_txid=None):
         coins = []
@@ -799,7 +844,7 @@ class Abstract_Wallet(PrintError):
             for n, txo in enumerate(tx.outputs()):
                 ser = tx_hash + ':%d'%n
                 _type, x, v = txo
-                if _type & TYPE_CLAIM:
+                if _type & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                     x = x[1]
                     self.claimtrie_transactions[ser] = _type  
                 if _type & TYPE_ADDRESS:
@@ -827,7 +872,7 @@ class Abstract_Wallet(PrintError):
     def remove_transaction(self, tx_hash):
         with self.transaction_lock:
             self.print_error("removing tx from history", tx_hash)
-            #tx = self.transactions.pop(tx_hash)
+            # tx = self.transactions.pop(tx_hash)
             for ser, hh in self.pruned_txo.items():
                 if hh == tx_hash:
                     self.pruned_txo.pop(ser)
@@ -940,6 +985,7 @@ class Abstract_Wallet(PrintError):
             for txo, v in txos.items():
                 tx_height, value, is_cb = v
                 prevout_hash, prevout_n = txo.split(':')
+                                       
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
