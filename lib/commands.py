@@ -29,7 +29,7 @@ from functools import wraps
 from decimal import Decimal
 
 import util
-from util import print_msg, format_satoshis, print_stderr
+from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds
 import lbrycrd
 from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
 from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE, RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
@@ -812,7 +812,10 @@ class Commands:
 
         outputs = [(TYPE_ADDRESS | TYPE_CLAIM,((name,val),claim_addr),amount)]
         coins = self.wallet.get_spendable_coins()
-        tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
+        try:
+            tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
+        except NotEnoughFunds: 
+            return {'success':False, 'reason':'Not enough funds'} 
         self.wallet.sign_transaction(tx, self._password)
         success,out = self.wallet.sendtx(tx) 
         if not success:
@@ -864,7 +867,10 @@ class Commands:
         
         outputs = [(TYPE_ADDRESS | TYPE_SUPPORT,((name,claim_id),claim_addr),amount)]
         coins = self.wallet.get_spendable_coins()
-        tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
+        try:
+            tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
+        except NotEnoughFunds:
+            return {'success':False, 'reason':'Not enough funds'}
         self.wallet.sign_transaction(tx, self._password)
         success,out = self.wallet.sendtx(tx) 
         if not success:
@@ -950,7 +956,11 @@ class Commands:
             # create a dummy tx for the extra amount in order to get the proper inputs to spend 
             dummy_outputs = [(TYPE_ADDRESS | TYPE_UPDATE,((name,claim_id,val),claim_addr),get_inputs_for_amount)]
             coins = self.wallet.get_spendable_coins()
-            dummy_tx = self.wallet.make_unsigned_transaction(coins,dummy_outputs,self.config,tx_fee,change_addr) 
+            try:
+                dummy_tx = self.wallet.make_unsigned_transaction(coins,dummy_outputs,self.config,tx_fee,change_addr)
+            except NotEnoughFunds: 
+                return {'success':False, 'reason':'Not enough funds'} 
+
             # add the unspents to input
             for i in dummy_tx._inputs:
                 inputs.append(i)
