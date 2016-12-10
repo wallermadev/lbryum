@@ -22,6 +22,7 @@ import ast
 import threading
 import random
 import time
+import logging
 import json
 import copy
 import re
@@ -44,6 +45,10 @@ from verifier import SPV
 from mnemonic import Mnemonic
 
 import paymentrequest
+
+
+log = logging.getLogger(__name__)
+
 
 # internal ID for imported account
 IMPORTED_ACCOUNT = '/x'
@@ -123,6 +128,11 @@ class WalletStorage(PrintError):
             return
         if not self.modified:
             return
+        with self.lock:
+            self._write()
+
+    def _write(self):
+        log.info('==> Starting writing lbryum wallet')
         s = json.dumps(self.data, indent=4, sort_keys=True)
         temp_path = "%s.tmp.%s" % (self.path, os.getpid())
         with open(temp_path, "w") as f:
@@ -135,14 +145,19 @@ class WalletStorage(PrintError):
             mode = os.stat(self.path).st_mode if os.path.exists(self.path) else stat.S_IREAD | stat.S_IWRITE
         # perform atomic write on POSIX systems
         try:
+            log.info('Renaming %s -> %s', temp_path, self.path)
             os.rename(temp_path, self.path)
-        except:
+        except Exception:
+            log.exception('Failed to rename %s -> %s', temp_path, self.path)
+            log.error('Does %s exists: %s', temp_path, os.path.exists(temp_path))
+            log.error('Does %s exists: %s', self.path, os.path.exists(self.path))
             os.remove(self.path)
             os.rename(temp_path, self.path)
         if 'ANDROID_DATA' not in os.environ:
             import stat
             os.chmod(self.path, mode)
         self.modified = False
+        log.info('<== Done writing lbryum wallet')
 
 
 class Abstract_Wallet(PrintError):
