@@ -183,7 +183,7 @@ class Abstract_Wallet(PrintError):
         self.labels                = storage.get('labels', {})
         self.frozen_addresses      = set(storage.get('frozen_addresses',[]))
         self.stored_height         = storage.get('stored_height', 0)       # last known height (for offline mode)
-        self.history               = storage.get('addr_history',{})        # address -> list(txid, height)
+        self._history              = storage.get('addr_history',{})        # address -> list(txid, height)
 
         # This attribute is set when wallet.start_threads is called.
         self.synchronizer = None
@@ -212,6 +212,7 @@ class Abstract_Wallet(PrintError):
         self.up_to_date = False
         self.lock = threading.Lock()
         self.transaction_lock = threading.Lock()
+        self._history_lock = threading.Lock()
         self.tx_event = threading.Event()
 
         self.check_history()
@@ -219,6 +220,19 @@ class Abstract_Wallet(PrintError):
         # save wallet type the first time
         if self.storage.get('wallet_type') is None:
             self.storage.put('wallet_type', self.wallet_type)
+
+    # protect self.history from being modified
+    def history_values(self):
+        with self._history_lock:
+            return copy.copy(self._history.values())
+
+    def _history_put(self, key, value):
+        with self._history_lock:
+            self._history[key] = value
+
+    def _history_pop(self, key):
+        with self._history_lock:
+            return self._history.pop(key)
 
     def diagnostic_name(self):
         return self.basename()
@@ -264,7 +278,10 @@ class Abstract_Wallet(PrintError):
             self.storage.put('txi', self.txi)
             self.storage.put('txo', self.txo)
             self.storage.put('pruned_txo', self.pruned_txo)
-            self.storage.put('addr_history', self.history)
+            with self._history_lock:
+                # ran into `dictionary changed size during iteration` errors
+                # during this call so putting it inside a lock to prevent modification
+                self.storage.put('addr_history', self._history)
             self.storage.put('claimtrie_transactions',self.claimtrie_transactions)
             if write:
                 self.storage.write()
@@ -276,13 +293,13 @@ class Abstract_Wallet(PrintError):
             self.pruned_txo = {}
         self.save_transactions()
         with self.lock:
-            self.history = {}
+            self._history = {}
             self.tx_addr_hist = {}
 
     @profiler
     def build_reverse_history(self):
         self.tx_addr_hist = {}
-        for addr, hist in self.history.items():
+        for addr, hist in self._history.items():
             for tx_hash, h in hist:
                 s = self.tx_addr_hist.get(tx_hash, set())
                 s.add(addr)
@@ -291,9 +308,9 @@ class Abstract_Wallet(PrintError):
     @profiler
     def check_history(self):
         save = False
-        for addr, hist in self.history.items():
+        for addr, hist in self._history.items():
             if not self.is_mine(addr):
-                self.history.pop(addr)
+                self._history_pop(addr)
                 save = True
                 continue
 
@@ -396,8 +413,8 @@ class Abstract_Wallet(PrintError):
         self.save_accounts()
 
         # force resynchronization, because we need to re-run add_transaction
-        if address in self.history:
-            self.history.pop(address)
+        if address in self._history:
+            self._history_pop(address)
 
         if self.synchronizer:
             self.synchronizer.add(address)
@@ -538,11 +555,11 @@ class Abstract_Wallet(PrintError):
             return 1e12, 0
 
     def is_found(self):
-        return self.history.values() != [[]] * len(self.history)
+        return self._history.values() != [[]] * len(self._history)
 
     def get_num_tx(self, address):
         """ return number of transactions where address is involved """
-        return len(self.history.get(address, []))
+        return len(self._history.get(address, []))
 
     def get_tx_delta(self, tx_hash, address):
         "effect of tx on address"
@@ -613,7 +630,7 @@ class Abstract_Wallet(PrintError):
         return is_relevant, is_send, v, fee
 
     def get_addr_io(self, address):
-        h = self.history.get(address, [])
+        h = self._history.get(address, [])
         received = {}
         sent = {}
         for tx_hash, height in h:
@@ -810,7 +827,7 @@ class Abstract_Wallet(PrintError):
 
     def get_address_history(self, address):
         with self.lock:
-            return self.history.get(address, [])
+            return self._history.get(address, [])
 
     def get_status(self, h):
         if not h:
@@ -919,15 +936,14 @@ class Abstract_Wallet(PrintError):
 
     def receive_history_callback(self, addr, hist):
         with self.lock:
-            old_hist = self.history.get(addr, [])
+            old_hist = self._history.get(addr, [])
             for tx_hash, height in old_hist:
                 if (tx_hash, height) not in hist:
                     # remove tx if it's not referenced in histories
                     self.tx_addr_hist[tx_hash].remove(addr)
                     if not self.tx_addr_hist[tx_hash]:
                         self.remove_transaction(tx_hash)
-
-            self.history[addr] = hist
+            self._history_put(addr, hist)
 
         for tx_hash, tx_height in hist:
             # add it in case it was previously unconfirmed
@@ -1253,7 +1269,7 @@ class Abstract_Wallet(PrintError):
 
     def prepare_for_verifier(self):
         # review transactions that are in the history
-        for addr, hist in self.history.items():
+        for addr, hist in self._history.items():
             for tx_hash, tx_height in hist:
                 # add it in case it was previously unconfirmed
                 self.add_unverified_tx (tx_hash, tx_height)
@@ -1344,7 +1360,7 @@ class Abstract_Wallet(PrintError):
         return not self.is_watching_only()
 
     def is_used(self, address):
-        h = self.history.get(address,[])
+        h = self._history.get(address,[])
         c, u, x = self.get_addr_balance(address)
         return len(h) > 0 and c + u + x == 0
 
@@ -1354,7 +1370,7 @@ class Abstract_Wallet(PrintError):
 
     def address_is_old(self, address, age_limit=2):
         age = -1
-        h = self.history.get(address, [])
+        h = self._history.get(address, [])
         for tx_hash, tx_height in h:
             if tx_height == 0:
                 tx_age = 0
@@ -1449,7 +1465,7 @@ class Abstract_Wallet(PrintError):
     def get_unused_addresses(self, account):
         # fixme: use slots from expired requests
         domain = self.get_account_addresses(account, include_change=False)
-        return [addr for addr in domain if not self.history.get(addr)
+        return [addr for addr in domain if not self._history.get(addr)
                 and addr not in self.receive_requests.keys()]
 
     def get_unused_address(self, account):
@@ -1649,7 +1665,7 @@ class Deterministic_Wallet(Abstract_Wallet):
     def num_unused_trailing_addresses(self, addresses):
         k = 0
         for a in addresses[::-1]:
-            if self.history.get(a):break
+            if self._history.get(a):break
             k = k + 1
         return k
 
@@ -1662,7 +1678,7 @@ class Deterministic_Wallet(Abstract_Wallet):
             addresses = account.get_addresses(0)
             k = self.num_unused_trailing_addresses(addresses)
             for a in addresses[0:-k]:
-                if self.history.get(a):
+                if self._history.get(a):
                     n = 0
                 else:
                     n += 1
@@ -1680,8 +1696,8 @@ class Deterministic_Wallet(Abstract_Wallet):
         return address
 
     def add_address(self, address):
-        if address not in self.history:
-            self.history[address] = []
+        if address not in self._history:
+            self._history_put(address, [])
         if self.synchronizer:
             self.synchronizer.add(address)
         self.save_accounts()
@@ -1702,7 +1718,7 @@ class Deterministic_Wallet(Abstract_Wallet):
             return False
         prev_addresses = prev_addresses[max(0, i - limit):]
         for addr in prev_addresses:
-            if self.history.get(addr):
+            if self._history.get(addr):
                 return False
         return True
 

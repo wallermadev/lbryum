@@ -152,7 +152,7 @@ class Synchronizer(ThreadJob):
         addresses, and request any transactions in its address history
         we don't have.
         '''
-        for history in self.wallet.history.values():
+        for history in self.wallet.history_values():
             # Old lbryum servers returned ['*'] when all history for
             # the address was pruned.  This no longer happens but may
             # remain in old wallets.
