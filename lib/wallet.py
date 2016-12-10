@@ -213,6 +213,7 @@ class Abstract_Wallet(PrintError):
         self.lock = threading.Lock()
         self.transaction_lock = threading.Lock()
         self._history_lock = threading.Lock()
+        self._pruned_txo_lock = threading.Lock()
         self.tx_event = threading.Event()
 
         self.check_history()
@@ -234,6 +235,14 @@ class Abstract_Wallet(PrintError):
         with self._history_lock:
             return self._history.pop(key)
 
+    def _pruned_txo_put(self, key, value):
+        with self._pruned_txo_lock:
+            self._pruned_txo[key] = value
+
+    def _pruned_txo_pop(self, key):
+        with self._pruned_txo_lock:
+            return self._pruned_txo.pop(key)
+
     def diagnostic_name(self):
         return self.basename()
 
@@ -248,14 +257,14 @@ class Abstract_Wallet(PrintError):
     def load_transactions(self):
         self.txi = self.storage.get('txi', {})
         self.txo = self.storage.get('txo', {})
-        self.pruned_txo = self.storage.get('pruned_txo', {})
+        self._pruned_txo = self.storage.get('pruned_txo', {})
         tx_list = self.storage.get('transactions', {})
         self.claimtrie_transactions = self.storage.get('claimtrie_transactions',{}) 
         self.transactions = {}
         for tx_hash, raw in tx_list.items():
             tx = Transaction(raw)
             self.transactions[tx_hash] = tx
-            if self.txi.get(tx_hash) is None and self.txo.get(tx_hash) is None and (tx_hash not in self.pruned_txo.values()):
+            if self.txi.get(tx_hash) is None and self.txo.get(tx_hash) is None and (tx_hash not in self._pruned_txo.values()):
                 self.print_error("removing unreferenced tx", tx_hash)
                 self.transactions.pop(tx_hash)
             
@@ -277,7 +286,8 @@ class Abstract_Wallet(PrintError):
             self.storage.put('transactions', tx)
             self.storage.put('txi', self.txi)
             self.storage.put('txo', self.txo)
-            self.storage.put('pruned_txo', self.pruned_txo)
+            with self._pruned_txo_lock:
+                self.storage.put('pruned_txo', self._pruned_txo)
             with self._history_lock:
                 # ran into `dictionary changed size during iteration` errors
                 # during this call so putting it inside a lock to prevent modification
@@ -290,7 +300,7 @@ class Abstract_Wallet(PrintError):
         with self.transaction_lock:
             self.txi = {}
             self.txo = {}
-            self.pruned_txo = {}
+            self._pruned_txo = {}
         self.save_transactions()
         with self.lock:
             self._history = {}
@@ -315,7 +325,7 @@ class Abstract_Wallet(PrintError):
                 continue
 
             for tx_hash, tx_height in hist:
-                if tx_hash in self.pruned_txo.values() or self.txi.get(tx_hash) or self.txo.get(tx_hash):
+                if tx_hash in self._pruned_txo.values() or self.txi.get(tx_hash) or self.txo.get(tx_hash):
                     continue
                 tx = self.transactions.get(tx_hash)
                 if tx is not None:
@@ -564,7 +574,7 @@ class Abstract_Wallet(PrintError):
     def get_tx_delta(self, tx_hash, address):
         "effect of tx on address"
         # pruned
-        if tx_hash in self.pruned_txo.values():
+        if tx_hash in self._pruned_txo.values():
             return None
         delta = 0
         # substract the value of coins sent from address
@@ -869,7 +879,7 @@ class Abstract_Wallet(PrintError):
                             d[addr].append((ser, v))
                             break
                     else:
-                        self.pruned_txo[ser] = tx_hash
+                        self._pruned_txo_put(ser, tx_hash)
 
             # add outputs
             self.txo[tx_hash] = d = {}
@@ -890,9 +900,9 @@ class Abstract_Wallet(PrintError):
                         d[addr] = []
                     d[addr].append((n, v, is_coinbase))
                 # give v to txi that spends me
-                next_tx = self.pruned_txo.get(ser)
+                next_tx = self._pruned_txo.get(ser)
                 if next_tx is not None:
-                    self.pruned_txo.pop(ser)
+                    self._pruned_txo_pop(ser)
                     dd = self.txi.get(next_tx, {})
                     if dd.get(addr) is None:
                         dd[addr] = []
@@ -905,9 +915,9 @@ class Abstract_Wallet(PrintError):
         with self.transaction_lock:
             self.print_error("removing tx from history", tx_hash)
             # tx = self.transactions.pop(tx_hash)
-            for ser, hh in self.pruned_txo.items():
+            for ser, hh in self._pruned_txo.items():
                 if hh == tx_hash:
-                    self.pruned_txo.pop(ser)
+                    self._pruned_txo_pop(ser)
             # add tx to pruned_txo, and undo the txi addition
             for next_tx, dd in self.txi.items():
                 for addr, l in dd.items():
@@ -917,7 +927,7 @@ class Abstract_Wallet(PrintError):
                         prev_hash, prev_n = ser.split(':')
                         if prev_hash == tx_hash:
                             l.remove(item)
-                            self.pruned_txo[ser] = next_tx
+                            self._pruned_txo_put(ser, next_tx)
                     if not l:
                         dd.pop(addr)
                     else:
