@@ -650,10 +650,9 @@ class Commands:
         self.network.send([('blockchain.address.subscribe', [address])], callback)
         return True
 
-    @command('n')
-    def getvalueforname(self, name):
-        """Return the value of a name, if it has one, and verify its correctness"""
-
+    @staticmethod
+    def _verify_proof(name, claim_trie_root, result):
+        """ Verify proof for name claim """
         def _build_response(value, txid, n, amount, height):
             r = {
                     'value': value,
@@ -664,45 +663,56 @@ class Commands:
                 }
             return r
 
-        def callback(result):
-            if 'proof' in result:
-                try:
-                    verify_proof(result['proof'], block_header['claim_trie_root'], name)
-                except InvalidProofError:
-                    return {'error': "Proof was invalid"}
-                support_amount = sum(samount for stxid, sn, samount in result['supports'])
-                if 'txhash' in result['proof'] and 'nOut' in result['proof']:
-                    if 'transaction' in result:
-                        computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
-                        tx = deserialize_transaction(result['transaction'])
-                        nOut = result['proof']['nOut']
-                        if result['proof']['txhash'] == computed_txhash:
-                            if 0 <= nOut < len(tx['outputs']):
-                                scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
-                                amount = tx['outputs'][nOut]['value']
-                                effective_amount = amount + support_amount
-                                h = tx['lockTime'] + 1
-                                decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
-                                decode_out = decode_claim_script(decoded_script)
-                                if decode_out is False:                                    
-                                    return {'error': 'failed to decode as claim script'} 
-                                n,script = decode_out
-                                decoded_name, decoded_value = n.name, n.value
-                                if decoded_name == name:
-                                    return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
-                                return {'error': 'name in proof did not match requested name'}
-                            return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
-                        return {'error': "computed txid did not match given transaction: %s vs %s" %
-                                         (computed_txhash, result['proof']['txhash'])
-                        }
-                    return {'error': "didn't receive a transaction with the proof"}
-                return {'error':'name is not claimed'}
+        def _parse_proof_result(name, result):
+            support_amount = sum(samount for stxid, sn, samount in result['supports'])
+            if 'txhash' in result['proof'] and 'nOut' in result['proof']:
+                if 'transaction' in result:
+                    computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
+                    tx = deserialize_transaction(result['transaction'])
+                    nOut = result['proof']['nOut']
+                    if result['proof']['txhash'] == computed_txhash:
+                        if 0 <= nOut < len(tx['outputs']):
+                            scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
+                            amount = tx['outputs'][nOut]['value']
+                            effective_amount = amount + support_amount
+                            h = tx['lockTime'] + 1
+                            decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
+                            decode_out = decode_claim_script(decoded_script)
+                            if decode_out is False:
+                                return {'error': 'failed to decode as claim script'}
+                            n,script = decode_out
+                            decoded_name, decoded_value = n.name, n.value
+                            if decoded_name == name:
+                                return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
+                            return {'error': 'name in proof did not match requested name'}
+                        return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
+                    return {'error': "computed txid did not match given transaction: %s vs %s" %
+                                     (computed_txhash, result['proof']['txhash'])
+                    }
+                return {'error': "didn't receive a transaction with the proof"}
+            return {'error':'name is not claimed'}
+
+
+        if 'proof' in result:
+            try:
+                verify_proof(result['proof'], claim_trie_root, name)
+            except InvalidProofError:
+                return {'error': "Proof was invalid"}
+            return _parse_proof_result(name, result)
+        else:
             return {'error': "proof not in result"}
-        height = self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
-        block_header = self.network.blockchain.read_header(height)
-        blockhash = self.network.blockchain.hash_header(block_header)
-        response = self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
-        return callback(response)
+
+    @command('n')
+    def requestvalueforname(self, name, blockhash):
+        """Request value of name with proof from lbryum server"""
+        return self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
+
+    @command('n')
+    def getvalueforname(self, name):
+        block_header = self.network.blockchain.read_header(self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS)
+        block_hash = self.network.blockchain.hash_header(block_header)      
+        response = self.requestvalueforname(name,block_hash)
+        return Commands._verify_proof(name, block_header['claim_trie_root'], response)
 
     @command('n')
     def getclaimsfromtx(self, txid):
