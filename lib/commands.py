@@ -650,10 +650,9 @@ class Commands:
         self.network.send([('blockchain.address.subscribe', [address])], callback)
         return True
 
-    @command('n')
-    def getvalueforname(self, name):
-        """Return the value of a name, if it has one, and verify its correctness"""
-
+    @staticmethod
+    def _verify_proof(name, claim_trie_root, result):
+        """ Verify proof for name claim """
         def _build_response(value, txid, n, amount, height):
             r = {
                     'value': value,
@@ -664,45 +663,57 @@ class Commands:
                 }
             return r
 
-        def callback(result):
-            if 'proof' in result:
-                try:
-                    verify_proof(result['proof'], block_header['claim_trie_root'], name)
-                except InvalidProofError:
-                    return {'error': "Proof was invalid"}
-                support_amount = sum(samount for stxid, sn, samount in result['supports'])
-                if 'txhash' in result['proof'] and 'nOut' in result['proof']:
-                    if 'transaction' in result:
-                        computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
-                        tx = deserialize_transaction(result['transaction'])
-                        nOut = result['proof']['nOut']
-                        if result['proof']['txhash'] == computed_txhash:
-                            if 0 <= nOut < len(tx['outputs']):
-                                scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
-                                amount = tx['outputs'][nOut]['value']
-                                effective_amount = amount + support_amount
-                                h = tx['lockTime'] + 1
-                                decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
-                                decode_out = decode_claim_script(decoded_script)
-                                if decode_out is False:                                    
-                                    return {'error': 'failed to decode as claim script'} 
-                                n,script = decode_out
-                                decoded_name, decoded_value = n.name, n.value
-                                if decoded_name == name:
-                                    return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
-                                return {'error': 'name in proof did not match requested name'}
-                            return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
-                        return {'error': "computed txid did not match given transaction: %s vs %s" %
-                                         (computed_txhash, result['proof']['txhash'])
-                        }
-                    return {'error': "didn't receive a transaction with the proof"}
-                return {'error':'name is not claimed'}
+        def _parse_proof_result(name, result):
+            support_amount = sum(samount for stxid, sn, samount in result['supports'])
+            if 'txhash' in result['proof'] and 'nOut' in result['proof']:
+                if 'transaction' in result:
+                    computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
+                    tx = deserialize_transaction(result['transaction'])
+                    nOut = result['proof']['nOut']
+                    if result['proof']['txhash'] == computed_txhash:
+                        if 0 <= nOut < len(tx['outputs']):
+                            scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
+                            amount = tx['outputs'][nOut]['value']
+                            effective_amount = amount + support_amount
+                            h = tx['lockTime'] + 1
+                            decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
+                            decode_out = decode_claim_script(decoded_script)
+                            if decode_out is False:
+                                return {'error': 'failed to decode as claim script'}
+                            n,script = decode_out
+                            decoded_name, decoded_value = n.name, n.value
+                            if decoded_name == name:
+                                return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
+                            return {'error': 'name in proof did not match requested name'}
+                        return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
+                    return {'error': "computed txid did not match given transaction: %s vs %s" %
+                                     (computed_txhash, result['proof']['txhash'])
+                    }
+                return {'error': "didn't receive a transaction with the proof"}
+            return {'error':'name is not claimed'}
+
+
+        if 'proof' in result:
+            try:
+                verify_proof(result['proof'], claim_trie_root, name)
+            except InvalidProofError:
+                return {'error': "Proof was invalid"}
+            return _parse_proof_result(name, result)
+        else:
             return {'error': "proof not in result"}
-        height = self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
-        block_header = self.network.blockchain.read_header(height)
-        blockhash = self.network.blockchain.hash_header(block_header)
-        response = self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
-        return callback(response)
+
+    @command('n')
+    def requestvalueforname(self, name, blockhash):
+        """Request and return value of name with proof from lbryum server without verifying proof"""
+        return self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
+
+    @command('n')
+    def getvalueforname(self, name):
+        """Request value of name from lbryum server and verify its proof"""
+        block_header = self.network.blockchain.read_header(self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS)
+        block_hash = self.network.blockchain.hash_header(block_header)
+        response = self.requestvalueforname(name,block_hash)
+        return Commands._verify_proof(name, block_header['claim_trie_root'], response)
 
     @command('n')
     def getclaimsfromtx(self, txid):
@@ -801,6 +812,7 @@ class Commands:
     name : name to claim 
     val : value the name is set to
     amount : amount to claim
+    broadcast [default = True]: if True, broadcast transaction to the network
     claim_addr [optional] : address where claim will be sent
     tx_fee [optional] : transaction fee 
     change_addr [optional] : address where change amount will be sent
@@ -810,12 +822,13 @@ class Commands:
     reason : if not succesful, give reason
     txid : txid of resulting transaction if succesful
     nout : nout of the resulting support claim if succesful
+    tx: raw tx of the resulting transaction 
     fee : fee paid for the transaction if succesful 
     claimid : claimid of the resulting transaction 
     """
 
     @command('wpn')
-    def claim(self, name, val, amount, claim_addr=None, tx_fee=None, change_addr=None):
+    def claim(self, name, val, amount, broadcast=True, claim_addr=None, tx_fee=None, change_addr=None):
         if claim_addr is None:                   
             claim_addr = self.wallet.create_new_address()
         if change_addr is None:
@@ -832,9 +845,10 @@ class Commands:
         coins = self.wallet.get_spendable_coins()
         tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
         self.wallet.sign_transaction(tx, self._password)
-        success,out = self.wallet.sendtx(tx) 
-        if not success:
-            return {'success':False,'reason':out}
+        if broadcast:
+            success,out = self.wallet.sendtx(tx)
+            if not success:
+                return {'success':False,'reason':out}
         
         nout = None
         for i,output in enumerate(tx._outputs):
@@ -843,14 +857,15 @@ class Commands:
         assert(nout is not None)
         
         claimid = lbrycrd.encode_claim_id_hex(lbrycrd.claim_id_hash(lbrycrd.rev_hex(tx.hash()).decode('hex'),nout))
-        return {"success":True,"txid":tx.hash(),"nout":nout,"fee":str(Decimal(tx.get_fee())/COIN),
+        return {"success":True,"txid":tx.hash(),"nout":nout,"tx":str(tx),"fee":str(Decimal(tx.get_fee())/COIN),
                 "claimid":claimid}
     """
     support claim 
     Args:
     name : name of claim to support
     claim_id : claim id of claim to support
-    amount : amount to support 
+    amount : amount to support
+    broadcast [default = True]: if True, broadcast transaction to the network
     claim_addr [optional] : address where support claim will be sent
     tx_fee [optional] : transaction fee 
     change_addr [optional] : address where change amount will be sent
@@ -860,11 +875,12 @@ class Commands:
     reason : if not succesful, give reason
     txid : txid of resulting transaction if succesful
     nout : nout of the resulting support claim if succesful
+    tx: raw tx of the resulting transaction 
     fee : fee paid for the transaction if succesful 
     """
 
     @command('wpn')
-    def support(self, name, claim_id, amount, claim_addr=None, tx_fee=None,
+    def support(self, name, claim_id, amount, broadcast=True, claim_addr=None, tx_fee=None,
                      change_addr=None):
         if claim_addr is None:                   
             claim_addr = self.wallet.create_new_address()
@@ -884,16 +900,17 @@ class Commands:
         coins = self.wallet.get_spendable_coins()
         tx = self.wallet.make_unsigned_transaction(coins,outputs,self.config,tx_fee,change_addr)
         self.wallet.sign_transaction(tx, self._password)
-        success,out = self.wallet.sendtx(tx) 
-        if not success:
-            return {'success':False,'reason':out}
+        if broadcast:
+            success,out = self.wallet.sendtx(tx)
+            if not success:
+                return {'success':False,'reason':out}
 
         nout = None
         for i,output in enumerate(tx._outputs):
             if output[0] & TYPE_SUPPORT:
                 nout = i
 
-        return {"success":True,"txid":tx.hash(),"nout":nout,"fee":str(Decimal(tx.get_fee())/COIN)} 
+        return {"success":True,"txid":tx.hash(),"nout":nout,"tx":str(tx),"fee":str(Decimal(tx.get_fee())/COIN)} 
 
     """
     update claim 
@@ -904,21 +921,23 @@ class Commands:
     claim_id : claim id of claim to update
     val : value to update to 
     amount : amount to update to, if set to None, will be the current claim amount - tx_fee 
+    broadcast [default = True]: if True, broadcast transaction to the network
     claim_addr [optional] : address where claim will be sent
     tx_fee [optional] : transaction fee 
     change_addr [optional] : address where change amount is sent
-       
+
     Output:
     success : True if succesful , False otherwise
     reason : if not succesful, give reason
     txid : txid of resulting transaction if succesful
     nout : nout of the resulting claim update if succesful
+    tx: raw tx of the resulting transaction 
     fee : fee paid for the transaction if succesful 
     amount: amount updated to 
     """
 
     @command('wpn')
-    def update(self, txid, nout, name, claim_id, val, amount, claim_addr=None, tx_fee=None,
+    def update(self, txid, nout, name, claim_id, val, amount, broadcast=True, claim_addr=None, tx_fee=None,
                     change_addr=None):
 
         if claim_addr is None:                   
@@ -993,9 +1012,10 @@ class Commands:
   
         tx = Transaction.from_io(inputs,outputs)      
         self.wallet.sign_transaction(tx, self._password)
-        success,out = self.wallet.sendtx(tx) 
-        if not success: 
-            return {"success":False, "reason":out} 
+        if broadcast:
+            success,out = self.wallet.sendtx(tx)
+            if not success:
+                return {"success":False, "reason":out}
             
         nout = None
         amount = 0 
@@ -1004,7 +1024,7 @@ class Commands:
                 nout = i
                 amount = output[2]
 
-        return {"success":True,"txid":tx.hash(),"nout":nout,"fee":str(Decimal(tx.get_fee())/COIN),
+        return {"success":True,"txid":tx.hash(),"nout":nout,"tx":str(tx),"fee":str(Decimal(tx.get_fee())/COIN),
                 "amount":str(Decimal(amount)/COIN),}
 
     """
@@ -1012,17 +1032,19 @@ class Commands:
     Args:
     txid : txid of claim to abandon
     nout : nout of claim to abandon
+    broadcast [default = True]: if True, broadcast transaction to the network
     return_addr [optional] : address where amount will be returned
-    tx_fee [optional] : transaction fee 
-       
+    tx_fee [optional] : transaction fee
+
     Output:
     success : True if succesful , False otherwise
     reason : if not succesful, give reason
     txid : txid of resulting transaction if succesful
+    tx: raw tx of the resulting transaction 
     fee : fee paid for the transaction if succesful 
     """
     @command('wpn')
-    def abandon(self, txid, nout, return_addr=None, tx_fee=None):
+    def abandon(self, txid, nout, broadcast=True, return_addr=None, tx_fee=None):
         # create a single new address to abandon into if return_addr was not specified 
         if return_addr is None:
             return_addr = self.wallet.create_new_address()
@@ -1048,10 +1070,11 @@ class Commands:
         outputs = [(TYPE_ADDRESS,return_addr,return_value)]  
         tx = Transaction.from_io(inputs,outputs)         
         self.wallet.sign_transaction(tx, self._password)
-        success,out = self.wallet.sendtx(tx) 
-        if not success:
-            return {'success':False,'reason':out}
-        return {'success':True,'txid':tx.hash(),'fee':str(Decimal(tx.get_fee())/COIN)}
+        if broadcast:
+            success,out = self.wallet.sendtx(tx)
+            if not success:
+                return {'success':False,'reason':out}
+        return {'success':True,'txid':tx.hash(),'tx':str(tx),'fee':str(Decimal(tx.get_fee())/COIN)}
 
 param_descriptions = {
     'privkey': 'Private key. Type \'?\' to get a prompt.',
@@ -1102,6 +1125,7 @@ command_options = {
     'exclude_claimtrietx':(None,"--exclude_claimtrietx", "Exclude claimtrie transactions"),
     'return_addr': (None, "--return_addr", "Return address where amounts in abandoned claimtrie transactions are returned."),
     'claim_addr':  (None, "--claim_addr",  "Address where claims are sent."),
+    'broadcast':   (None, "--broadcast",   "if True, broadcast the transaction")
 }
 
 

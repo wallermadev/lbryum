@@ -2,6 +2,7 @@ import unittest
 import binascii
 from lib import lbrycrd
 from lib import claims
+from lib import commands
 
 def get_powhash(input_str):
     out=lbrycrd.PoWHash(input_str)
@@ -62,6 +63,19 @@ class Test_Lbry(unittest.TestCase):
         }
         out = claims.verify_proof(proof,root_hash[::-1].encode('hex'),'a')
         self.assertEqual(out,True)
+
+    def test_commands_wrapper_for_verify_proof(self):
+        result = {}
+        out = commands.Commands._verify_proof('test','test',result)
+        self.assertTrue('error' in out)
+
+        # valid proof and root has taken from test_verify_proof()
+        valid_proof ={'last takeover height': 10, 'txhash': 'bd9fa7ffd57d810d4ce14de76beea29d847b8ac34e8e536802534ecb1ca43b68', 'nodes': [{'children': [{'character': 97}, {'nodeHash': '5aa71fb53f646dd5cbde28fce95d89a0e9720f8ca4f87d66a52aa9e7aa0a1552', 'character': 98}]}, {'children': []}], 'nOut': 0}
+        valid_root_hash='198e65bd4c3b66681fac1b8a0b9850cf28dc5df33a86b67cbd72cc7e5d93ba49'
+        result={'proof':valid_proof,'supports':[]}
+
+        out = commands.Commands._verify_proof('a',valid_root_hash,result)
+        self.assertTrue('error' in out)
 
     def test_claimid_hash(self):
         txid= "4d08012feefec192bdb45495dcedc171a56d369539ce2d589e3e1ec81a882bb4"
