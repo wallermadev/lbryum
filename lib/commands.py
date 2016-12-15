@@ -704,13 +704,14 @@ class Commands:
 
     @command('n')
     def requestvalueforname(self, name, blockhash):
-        """Request value of name with proof from lbryum server"""
+        """Request and return value of name with proof from lbryum server without verifying proof"""
         return self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
 
     @command('n')
     def getvalueforname(self, name):
+        """Request value of name from lbryum server and verify its proof"""
         block_header = self.network.blockchain.read_header(self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS)
-        block_hash = self.network.blockchain.hash_header(block_header)      
+        block_hash = self.network.blockchain.hash_header(block_header)
         response = self.requestvalueforname(name,block_hash)
         return Commands._verify_proof(name, block_header['claim_trie_root'], response)
 
