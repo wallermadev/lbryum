@@ -39,7 +39,7 @@ setup(
         'protobuf==3.0.0',
         'dnspython',
         'jsonrpclib',
-        'six==1.9.0',
+        'six>=1.9.0',
         'appdirs'
     ],
     packages=[
