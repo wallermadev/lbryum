@@ -22,13 +22,17 @@ import util
 from lbrycrd import *
 
 NULL_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
-MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 HEADER_SIZE = 112
 BLOCKS_PER_CHUNK = 96
 
 HEADERS_URL = "https://s3.amazonaws.com/lbry-blockchain-headers/blockchain_headers_latest"
 
-class Blockchain(util.PrintError):
+
+class ChainValidationError(Exception):
+    pass
+
+
+class _Blockchain(util.PrintError):
     '''Manages blockchain headers and their verification'''
 
     def __init__(self, config, network):
@@ -50,9 +54,9 @@ class Blockchain(util.PrintError):
     def verify_header(self, header, prev_header, bits, target):
         prev_hash = self.hash_header(prev_header)
         assert prev_hash == header.get('prev_block_hash'), "prev hash mismatch: %s vs %s" % (
-        prev_hash, header.get('prev_block_hash'))
+            prev_hash, header.get('prev_block_hash'))
         assert bits == header.get('bits'), "bits mismatch: %s vs %s (hash: %s)" % (
-        bits, header.get('bits'), self.hash_header(header))
+            bits, header.get('bits'), self.hash_header(header))
         _pow_hash = self.pow_hash_header(header)
         assert int('0x' + _pow_hash, 16) <= target, "insufficient proof of work: %s vs target %s" % (
         int('0x' + _pow_hash, 16), target)
@@ -64,7 +68,7 @@ class Blockchain(util.PrintError):
         for header in chain:
             height = header['block_height']
             if self.read_header(height) is not None:
-                bits, target = self.get_target(height, prev_header, header, self.config.get('chain'))
+                bits, target = self.get_target(height, prev_header, header)
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
 
@@ -75,7 +79,7 @@ class Blockchain(util.PrintError):
         for i in range(BLOCKS_PER_CHUNK):
             raw_header = data[i * HEADER_SIZE:(i + 1) * HEADER_SIZE]
             header = self.deserialize_header(raw_header)
-            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header, self.config.get('chain'))
+            bits, target = self.get_target(index * BLOCKS_PER_CHUNK + i, prev_header, header)
             if header is not None:
                 self.verify_header(header, prev_header, bits, target)
             prev_header = header
@@ -154,7 +158,8 @@ class Blockchain(util.PrintError):
 
     def save_header(self, header):
         data = self.serialize_header(header).decode('hex')
-        assert len(data) == HEADER_SIZE, "Header is wrong size"
+        if not len(data) == HEADER_SIZE:
+            raise ChainValidationError("Header is wrong size")
         height = header.get('block_height')
         filename = self.path()
         f = open(filename, 'rb+')
@@ -182,47 +187,40 @@ class Blockchain(util.PrintError):
                 return h
 
     def get_target(self, index, first, last, chain='main'):
-        # print_error("Get target for block ", index)
+        """
+        this follows the calculations in lbrycrd/src/lbry.cpp
+        Returns: (bits, target)
+        """
         if index == 0:
-            return 0x1f00ffff, MAX_TARGET
+            return self.GENESIS_BITS, self.MAX_TARGET
         assert last is not None, "Last shouldn't be none"
         # bits to target
         bits = last.get('bits')
         # print_error("Last bits: ", bits)
-        bitsN = (bits >> 24) & 0xff
-        assert 0x03 <= bitsN <= 0x1f, "First part of bits should be in [0x03, 0x1d]"
-        bitsBase = bits & 0xffffff
-        assert 0x8000 <= bitsBase <= 0x7fffff, "Second part of bits should be in [0x8000, 0x7fffff]"
-        target = bitsBase << (8 * (bitsN - 3))
+        self.check_bits(bits)
+
         # new target
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        # regtest has target timespan of 1, so that blocks are quickly generated
-        # otherwise , target is 2min 30 seconds 
-        if chain == 'regtest':
-            nTargetTimespan = 1
-        else:
-            nTargetTimespan = 150
+        nTargetTimespan = self.N_TARGET_TIMESPAN
         nModulatedTimespan = nTargetTimespan - (nActualTimespan - nTargetTimespan) / 8
         nMinTimespan = nTargetTimespan - (nTargetTimespan / 8)
         nMaxTimespan = nTargetTimespan + (nTargetTimespan / 2)
-        nModulatedTimespan = nMinTimespan if nModulatedTimespan < nMinTimespan else nMaxTimespan
-        new_target = target * nModulatedTimespan
-        while new_target >= 2 ** 256:
-            new_target -= 2 ** 256
-        new_target = new_target / nModulatedTimespan
-        new_target = min(MAX_TARGET, new_target)
-        # convert new target to bits
-        c = ("%064x" % new_target)
-        c = c[2:]
-        while c[:2] == '00' and len(c) > 6:
-            c = c[2:]
-        bitsN, bitsBase = len(c) / 2, int('0x' + c[:6], 16)
-        if bitsBase >= 0x800000:
-            bitsN += 1
-            bitsBase >>= 8
-        new_bits = bitsN << 24 | bitsBase
-        # print_error("Calculated bits: ", new_bits)
-        return new_bits, bitsBase << (8 * (bitsN - 3))
+        if nModulatedTimespan < nMinTimespan:
+            nModulatedTimespan = nMinTimespan
+        elif nModulatedTimespan > nMaxTimespan:
+            nModulatedTimespan = nMaxTimespan
+
+        bnOld = ArithUint256.SetCompact(bits)
+        bnNew = bnOld * nModulatedTimespan
+        # this doesn't work if it is nTargetTimespan even though that
+        # is what it looks like it should be based on reading the code
+        # in lbry.cpp
+        bnNew /= nModulatedTimespan
+        if bnNew > self.MAX_TARGET:
+            bnNew = ArithUint256(self.MAX_TARGET)
+        return bnNew.GetCompact(), bnNew._value
+
+
 
     def connect_header(self, chain, header):
         '''Builds a header chain until it connects.  Returns True if it has
@@ -271,3 +269,120 @@ class Blockchain(util.PrintError):
         except BaseException as e:
             self.print_error('verify_chunk failed', str(e))
             return idx - 1
+
+# these values follow the parameters in lbrycrd/src/chainparams.cpp
+class LbryCrd(_Blockchain):
+    MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    # target is 2min 30 seconds
+    N_TARGET_TIMESPAN = 150
+    GENESIS_BITS = 0x1f00ffff
+
+    def check_bits(self, bits):
+        bitsN = (bits >> 24) & 0xff
+        assert 0x03 <= bitsN <= 0x1f, \
+            "First part of bits should be in [0x03, 0x1d], but it was {}".format(hex(bitsN))
+        bitsBase = bits & 0xffffff
+        assert 0x8000 <= bitsBase <= 0x7fffff, \
+            "Second part of bits should be in [0x8000, 0x7fffff] but it was {}".format(bitsBase)
+
+
+class LbryCrdTest(_Blockchain):
+    MAX_TARGET = 0x0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    N_TARGET_TIMESPAN = 150
+    GENESIS_BITS = 0x1f00ffff
+
+    def check_bits(self, bits):
+        bitsN = (bits >> 24) & 0xff
+        assert 0x03 <= bitsN <= 0x1f, \
+            "First part of bits should be in [0x03, 0x1d], but it was {}".format(hex(bitsN))
+        bitsBase = bits & 0xffffff
+        assert 0x8000 <= bitsBase <= 0x7fffff, \
+            "Second part of bits should be in [0x8000, 0x7fffff] but it was {}".format(bitsBase)
+
+
+class LbryCrdReg(_Blockchain):
+    MAX_TARGET = 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+    # regtest has target timespan of 1, so that blocks are quickly generated
+    N_TARGET_TIMESPAN = 1
+    GENESIS_BITS = 0x207fffff
+
+    def check_bits(self, bits):
+        pass
+
+
+def get_blockchain(config, network):
+    chain = config.get('chain', 'lbrycrd')
+    if chain == 'lbrycrd':
+        return LbryCrd(config, network)
+    elif chain == 'lbrycrdtest':
+        return LbryCrdTest(config, network)
+    elif chain == 'lbrycrdreg':
+        return LbryCrdReg(config, network)
+    else:
+        raise ValueError('Unknown chain: {}'.format(chain))
+
+
+
+# see src/arith_uint256.cpp in lbrycrd
+class ArithUint256(object):
+    def __init__(self, value):
+        self._value = value
+
+    def __str__(self):
+        return hex(self._value)
+
+    @staticmethod
+    def fromCompact(nCompact):
+        """Convert a compact representation into its value"""
+        nSize = nCompact >> 24
+        # the lower 23 bits
+        nWord = nCompact & 0x007fffff
+        if nSize <= 3:
+            return nWord >> 8 * (3 - nSize)
+        else:
+            return nWord << 8 * (nSize - 3)
+
+    @classmethod
+    def SetCompact(cls, nCompact):
+        return cls(ArithUint256.fromCompact(nCompact))
+
+    def bits(self):
+        """Returns the position of the highest bit set plus one."""
+        bn = bin(self._value)[2:]
+        for i, d in enumerate(bn):
+            if d:
+                return (len(bn) - i) + 1
+        return 0
+
+    def GetLow64(self):
+        return self._value & 0xffffffffffffffff
+
+    def GetCompact(self):
+        """Convert a value into its compact representation"""
+        nSize = (self.bits() + 7) // 8
+        nCompact = 0
+        if nSize <= 3:
+            nCompact = self.GetLow64() << 8 * (3 - nSize)
+        else:
+            bn = ArithUint256(self._value >> 8 * (nSize - 3))
+            nCompact = bn.GetLow64()
+        # The 0x00800000 bit denotes the sign.
+        # Thus, if it is already set, divide the mantissa by 256 and increase the exponent.
+        if nCompact & 0x00800000:
+            nCompact >>= 8
+            nSize += 1
+        assert (nCompact & ~0x007fffff) == 0
+        assert nSize < 256
+        nCompact |= nSize << 24
+        return nCompact
+
+    def __mul__(self, x):
+        # Take the mod because we are limited to an unsigned 256 bit number
+        return ArithUint256((self._value * x) % 2**256)
+
+    def __idiv__(self, x):
+        self._value = (self._value // x)
+        return self
+
+    def __gt__(self, x):
+        return self._value > x
