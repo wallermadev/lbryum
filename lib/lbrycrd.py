@@ -46,7 +46,7 @@ TYPE_UPDATE  = 32
 
 # claim related constants
 EXPIRATION_BLOCKS = 262974
-RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS = 6
+RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS = 1
 
 # AES encryption
 EncodeAES = lambda secret, s: base64.b64encode(aes.encryptData(secret,s))
