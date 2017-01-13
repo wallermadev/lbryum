@@ -815,7 +815,7 @@ class Network(util.DaemonThread):
         else:
             return local_height
 
-    def synchronous_get(self, request, timeout=100000000):
+    def synchronous_get(self, request, timeout=30):
         queue = Queue.Queue()
         self.send([request], queue.put)
         r = queue.get(True, timeout)
