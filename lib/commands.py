@@ -825,7 +825,7 @@ class Commands:
     nout : nout of the resulting support claim if succesful
     tx: raw tx of the resulting transaction 
     fee : fee paid for the transaction if succesful 
-    claimid : claimid of the resulting transaction 
+    claim_id : claim id of the resulting transaction 
     """
 
     @command('wpn')
@@ -862,7 +862,7 @@ class Commands:
         
         claimid = lbrycrd.encode_claim_id_hex(lbrycrd.claim_id_hash(lbrycrd.rev_hex(tx.hash()).decode('hex'),nout))
         return {"success":True,"txid":tx.hash(),"nout":nout,"tx":str(tx),"fee":str(Decimal(tx.get_fee())/COIN),
-                "claimid":claimid}
+                "claim_id":claimid}
     """
     support claim 
     Args:
