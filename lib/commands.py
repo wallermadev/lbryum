@@ -27,6 +27,7 @@ import ast
 import base64
 from functools import wraps
 from decimal import Decimal
+import logging
 
 import util
 from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds
@@ -40,7 +41,12 @@ from paymentrequest import PR_PAID, PR_UNPAID, PR_UNKNOWN, PR_EXPIRED
 import contacts
 from claims import verify_proof, InvalidProofError
 
+
+log = logging.getLogger(__name__)
+
+
 known_commands = {}
+
 
 class Command:
 
@@ -705,6 +711,7 @@ class Commands:
     @command('n')
     def requestvalueforname(self, name, blockhash):
         """Request and return value of name with proof from lbryum server without verifying proof"""
+        log.info('Requesting value for name: %s, blockhash: %s', name, blockhash)
         return self.network.synchronous_get(('blockchain.claimtrie.getvalue', [name, blockhash]))
 
     @command('n')
@@ -713,7 +720,7 @@ class Commands:
         block_header = self.network.blockchain.read_header(
             self.network.get_local_height() - RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS + 1)
         block_hash = self.network.blockchain.hash_header(block_header)
-        response = self.requestvalueforname(name,block_hash)
+        response = self.requestvalueforname(name, block_hash)
         return Commands._verify_proof(name, block_header['claim_trie_root'], response)
 
     @command('n')
