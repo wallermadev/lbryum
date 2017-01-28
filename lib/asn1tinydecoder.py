@@ -2,23 +2,23 @@
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-  
+
 
 # This is a simple and fast ASN1 decoder without external libraries.
 #
-# In order to browse through the ASN1 structure you need only 3 
+# In order to browse through the ASN1 structure you need only 3
 # functions allowing you to navigate:
-#    asn1_node_root(...), asn1_node_next(...) and asn1_node_first_child(...) 
+#    asn1_node_root(...), asn1_node_next(...) and asn1_node_first_child(...)
 #
 ####################### BEGIN ASN1 DECODER ############################
 
@@ -32,18 +32,18 @@
 def asn1_node_root(der):
     return asn1_read_length(der,0)
 
-# gets the next ASN1 structure following (ixs,ixf,ixl) 
+# gets the next ASN1 structure following (ixs,ixf,ixl)
 def asn1_node_next(der, (ixs,ixf,ixl)):
     return asn1_read_length(der,ixl+1)
 
-# opens the container (ixs,ixf,ixl) and returns the first ASN1 inside 
+# opens the container (ixs,ixf,ixl) and returns the first ASN1 inside
 def asn1_node_first_child(der, (ixs,ixf,ixl)):
     if ord(der[ixs]) & 0x20 != 0x20:
         raise ValueError('Error: can only open constructed types. '
                 +'Found type: 0x'+der[ixs].encode("hex"))
     return asn1_read_length(der,ixf)
 
-# is true if one ASN1 chunk is inside another chunk. 
+# is true if one ASN1 chunk is inside another chunk.
 def asn1_node_is_child_of((ixs,ixf,ixl), (jxs,jxf,jxl)):
     return ( (ixf <= jxs ) and (jxl <= ixl) ) or \
            ( (jxf <= ixs ) and (ixl <= jxl) )

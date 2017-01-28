@@ -92,7 +92,7 @@ class WsClientThread(util.DaemonThread):
             params = r.get('params')
             result = r.get('result')
             if result is None:
-                continue    
+                continue
             if method == 'blockchain.address.subscribe':
                 self.network.send([('blockchain.address.get_balance', params)], self.response_queue.put)
             elif method == 'blockchain.address.get_balance':
