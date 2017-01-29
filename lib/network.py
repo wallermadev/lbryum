@@ -684,7 +684,6 @@ class Network(util.DaemonThread):
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
                 # If not finished, get the next chunk
                 if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
-                    self.catchup_progress += BLOCKS_PER_CHUNK
                     self.bc_requests.popleft()
                     self.notify('updated')
                 else:
@@ -706,11 +705,12 @@ class Network(util.DaemonThread):
             # Ignore unsolicited headers
             if req_if == interface and req_height == response['params'][0]:
                 next_height = self.blockchain.connect_header(data['chain'], response['result'])
+                self.catchup_progress += 1
                 # If not finished, get the next header
                 if next_height is True or next_height is False:
+                    self.catchup_progress = 0
                     self.bc_requests.popleft()
                     if next_height:
-                        self.catchup_progress += 1
                         self.switch_lagging_interface(interface.server)
                         self.notify('updated')
                     else:
@@ -809,13 +809,17 @@ class Network(util.DaemonThread):
     def get_local_height(self):
         return self.blockchain.height()
 
-    def get_catchup_progress(self):
-        local_height = self.blockchain.height()
+    def get_blocks_behind(self):
+        """An estimate of the number of blocks remaing to download from the server"""
+        local_height = self.get_local_height()
         remote_height = self.get_server_height()
-        if remote_height > local_height:
-            return local_height + self.catchup_progress
+        if remote_height < local_height:
+            return None
+        diff = remote_height - local_height
+        if diff > 0:
+            return diff - self.catchup_progress
         else:
-            return local_height
+            return 0
 
     def synchronous_get(self, request, timeout=30):
         queue = Queue.Queue()
