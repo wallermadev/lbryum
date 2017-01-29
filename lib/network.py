@@ -777,7 +777,9 @@ class Network(util.DaemonThread):
             self.process_responses(interface)
 
     def run(self):
+        log.info('Initializing the blockchain')
         self.blockchain.init()
+        log.info('Blockchain initialized, starting run loop')
         while self.is_running():
             self.maintain_sockets()
             self.wait_on_sockets()
@@ -785,6 +787,7 @@ class Network(util.DaemonThread):
             self.run_jobs()    # Synchronizer and Verifier
             self.process_pending_sends()
 
+        log.info('Stopping network')
         self.stop_network()
         log.info("stopped")
 
