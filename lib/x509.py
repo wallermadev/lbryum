@@ -135,7 +135,7 @@ class X509(object):
         self.cert_sig_algo = decode_OID(asn1_get_value_of_type(der, ii, 'OBJECT IDENTIFIER'))
         cert_sig = asn1_node_next(der, cert_sig_algo)
         self.signature = asn1_get_value(der, cert_sig)[1:]
-        
+
     def get_keyID(self):
         # http://security.stackexchange.com/questions/72077/validating-an-ssl-certificate-chain-according-to-rfc-5280-am-i-understanding-th
         return self.SKI if self.SKI else repr(self.subject)

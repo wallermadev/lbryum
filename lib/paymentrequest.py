@@ -425,7 +425,7 @@ class InvoiceStore(object):
         for k, pr in self.invoices.items():
             l[k] = {
                 'hex': str(pr).encode('hex'),
-                'requestor': pr.get_requestor(), 
+                'requestor': pr.get_requestor(),
                 'txid': pr.tx
             }
         path = os.path.join(self.config.path, 'invoices')

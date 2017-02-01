@@ -193,7 +193,7 @@ class Test_keyImport(unittest.TestCase):
 
 class Test_seeds(unittest.TestCase):
     """ Test old and new seeds. """
-    
+
     def test_new_seed(self):
         seed = "cram swing cover prefer miss modify ritual silly deliver chunk behind inform able"
         self.assertTrue(is_new_seed(seed))

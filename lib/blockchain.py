@@ -220,8 +220,6 @@ class _Blockchain(util.PrintError):
             bnNew = ArithUint256(self.MAX_TARGET)
         return bnNew.GetCompact(), bnNew._value
 
-
-
     def connect_header(self, chain, header):
         '''Builds a header chain until it connects.  Returns True if it has
         successfully connected, False if verification failed, otherwise the

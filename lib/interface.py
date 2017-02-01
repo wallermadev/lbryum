@@ -20,6 +20,7 @@
 import os
 import re
 import socket
+import logging
 import ssl
 import sys
 import threading
@@ -37,6 +38,9 @@ else:
 import util
 import x509
 import pem
+
+
+log = logging.getLogger(__name__)
 
 
 def Connection(server, queue, config_path):
@@ -108,6 +112,7 @@ class TcpConnection(threading.Thread, util.PrintError):
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
                 return s
             except BaseException as e:
+                log.exception('Failed to connect to %s', res)
                 continue
         else:
             self.print_error("failed to connect", str(e))

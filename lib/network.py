@@ -20,7 +20,7 @@ from interface import Connection, Interface
 from blockchain import get_blockchain, BLOCKS_PER_CHUNK
 from version import LBRYUM_VERSION, PROTOCOL_VERSION
 
-log = logging.getLogger("lbryum")
+log = logging.getLogger(__name__)
 
 DEFAULT_PORTS = {'t': '50001', 's': '50002', 'h': '8081', 'g': '8082'}
 
@@ -32,7 +32,7 @@ def is_online(host, ports):
     result = sock.connect_ex((ip, int(ports['t'])))
     sock.close()
     if result == 0:
-        log.info("%s:%s is online" % (host, ports['t']))
+        log.info("%s:%s is online", host, ports['t'])
         return True
     return False
 
@@ -252,12 +252,12 @@ class Network(util.DaemonThread):
     def server_is_lagging(self):
         sh = self.get_server_height()
         if not sh:
-            self.print_error('no height for main interface')
+            log.info('no height for main interface')
             return True
         lh = self.get_local_height()
         result = (lh - sh) > 1
         if result:
-            self.print_error('%s is lagging (%d vs %d)' % (self.default_server, sh, lh))
+            log.info('%s is lagging (%d vs %d)', self.default_server, sh, lh)
         return result
 
     def set_status(self, status):
@@ -281,12 +281,14 @@ class Network(util.DaemonThread):
         message_id = self.message_id
         self.message_id += 1
         if self.debug:
-            self.print_error(interface.host, "-->", method, params, message_id)
+            log.debug('%s --> %s, %s, %s', interface.host, method, params, message_id)
         interface.queue_request(method, params, message_id)
         return message_id
 
     def send_subscriptions(self):
-        self.print_error('sending subscriptions to', self.interface.server, len(self.unanswered_requests), len(self.subscribed_addresses))
+        log.info(
+            'sending subscriptions to %s. Unanswered requests: %s, Subscribed addresses: %s',
+            self.interface.server, len(self.unanswered_requests), len(self.subscribed_addresses))
         self.sub_cache.clear()
         # Resend unanswered requests
         requests = self.unanswered_requests.values()
@@ -355,7 +357,7 @@ class Network(util.DaemonThread):
     def start_interface(self, server):
         if not server in self.interfaces and not server in self.connecting:
             if server == self.default_server:
-                self.print_error("connecting to %s as new interface" % server)
+                log.info("connecting to %s as new interface", server)
                 self.set_status('connecting')
             self.connecting.add(server)
             c = Connection(server, self.socket_queue, self.config.path)
@@ -374,7 +376,7 @@ class Network(util.DaemonThread):
     def set_proxy(self, proxy):
         self.proxy = proxy
         if proxy:
-            self.print_error('setting proxy', proxy)
+            log.info('setting proxy %s', proxy)
             proxy_mode = proxy_modes.index(proxy["mode"]) + 1
             socks.setdefaultproxy(proxy_mode, proxy["host"], int(proxy["port"]))
             socket.socket = socks.socksocket
@@ -387,14 +389,14 @@ class Network(util.DaemonThread):
     def start_network(self, protocol, proxy):
         assert not self.interface and not self.interfaces
         assert not self.connecting and self.socket_queue.empty()
-        self.print_error('starting network')
+        log.info('starting network')
         self.disconnected_servers = set([])
         self.protocol = protocol
         self.set_proxy(proxy)
         self.start_interfaces()
 
     def stop_network(self):
-        self.print_error("stopping network")
+        log.info("stopping network")
         for interface in self.interfaces.values():
             self.close_interface(interface)
         assert self.interface is None
@@ -452,7 +454,7 @@ class Network(util.DaemonThread):
             return
         i = self.interfaces[server]
         if self.interface != i:
-            self.print_error("switching to", server)
+            log.info("switching to %s", server)
             # stop any current interface in order to terminate subscriptions
             self.close_interface(self.interface)
             self.interface = i
@@ -477,7 +479,7 @@ class Network(util.DaemonThread):
 
     def process_response(self, interface, response, callbacks):
         if self.debug:
-            self.print_error("<--", response)
+            log.debug("<-- %s", response)
         error = response.get('error')
         result = response.get('result')
         method = response.get('method')
@@ -500,12 +502,12 @@ class Network(util.DaemonThread):
         elif method == 'blockchain.estimatefee':
             if error is None:
                 self.fee = int(result * COIN)
-                self.print_error("recommended fee", self.fee)
+                log.info("recommended fee %s", self.fee)
                 self.notify('fee')
         elif method == 'blockchain.relayfee':
             if error is None:
                 self.relay_fee = int(result * COIN)
-                self.print_error("relayfee", self.relay_fee)
+                log.info("relayfee %s", self.relay_fee)
         elif method == 'blockchain.block.get_chunk':
             self.on_get_chunk(interface, response)
         elif method == 'blockchain.block.get_header':
@@ -649,7 +651,7 @@ class Network(util.DaemonThread):
         if len(self.interfaces) + len(self.connecting) < self.num_server:
             self.start_random_interface()
             if now - self.nodes_retry_time > NODES_RETRY_INTERVAL:
-                self.print_error('network: retrying connections')
+                log.info('network: retrying connections')
                 self.disconnected_servers = set([])
                 self.nodes_retry_time = now
 
@@ -682,7 +684,6 @@ class Network(util.DaemonThread):
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
                 # If not finished, get the next chunk
                 if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
-                    self.catchup_progress += BLOCKS_PER_CHUNK
                     self.bc_requests.popleft()
                     self.notify('updated')
                 else:
@@ -704,11 +705,12 @@ class Network(util.DaemonThread):
             # Ignore unsolicited headers
             if req_if == interface and req_height == response['params'][0]:
                 next_height = self.blockchain.connect_header(data['chain'], response['result'])
+                self.catchup_progress += 1
                 # If not finished, get the next header
                 if next_height is True or next_height is False:
+                    self.catchup_progress = 0
                     self.bc_requests.popleft()
                     if next_height:
-                        self.catchup_progress += 1
                         self.switch_lagging_interface(interface.server)
                         self.notify('updated')
                     else:
@@ -775,7 +777,9 @@ class Network(util.DaemonThread):
             self.process_responses(interface)
 
     def run(self):
+        log.info('Initializing the blockchain')
         self.blockchain.init()
+        log.info('Blockchain initialized, starting run loop')
         while self.is_running():
             self.maintain_sockets()
             self.wait_on_sockets()
@@ -783,8 +787,9 @@ class Network(util.DaemonThread):
             self.run_jobs()    # Synchronizer and Verifier
             self.process_pending_sends()
 
+        log.info('Stopping network')
         self.stop_network()
-        self.print_error("stopped")
+        log.info("stopped")
 
     def on_header(self, i, header):
         height = header.get('block_height')
@@ -807,13 +812,17 @@ class Network(util.DaemonThread):
     def get_local_height(self):
         return self.blockchain.height()
 
-    def get_catchup_progress(self):
-        local_height = self.blockchain.height()
+    def get_blocks_behind(self):
+        """An estimate of the number of blocks remaing to download from the server"""
+        local_height = self.get_local_height()
         remote_height = self.get_server_height()
-        if remote_height > local_height:
-            return local_height + self.catchup_progress
+        if remote_height < local_height:
+            return None
+        diff = remote_height - local_height
+        if diff > 0:
+            return diff - self.catchup_progress
         else:
-            return local_height
+            return 0
 
     def synchronous_get(self, request, timeout=30):
         queue = Queue.Queue()
