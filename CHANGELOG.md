@@ -7,3 +7,5 @@ labeled as 2.7.1. Subsequent releases will follow
 [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Fixed
+ * Fixed user's supports and updates being spendable by other transactions
