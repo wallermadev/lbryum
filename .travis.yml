@@ -1,8 +1,16 @@
 sudo: false
 language: python
+
+# note that travis still builds PRs so that covers
+# other branches
+branches:
+  only: 
+    - master
+
 python:
     - "2.7"
 install:
     - pip install tox
 script:
     - tox
+    - rvm install 2.3.1 && rvm use 2.3.1 && gem install danger --version '~> 4.0' && danger
