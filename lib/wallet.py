@@ -714,7 +714,7 @@ class Abstract_Wallet(PrintError):
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
-                if txout[0] & TYPE_CLAIM == 0 or (abandon_txid is not None and prevout_hash == abandon_txid):
+                if txout[0] & (TYPE_CLAIM | TYPE_SUPPORT | TYPE_UPDATE) == 0 or (abandon_txid is not None and prevout_hash == abandon_txid):
                     output = {
                         'address':addr,
                         'value':value,
