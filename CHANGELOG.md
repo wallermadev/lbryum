@@ -7,5 +7,8 @@ labeled as 2.7.1. Subsequent releases will follow
 [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Changed
+ * Improve packaging of data files to support building with pyinstaller
+
 ### Fixed
  * Fixed user's supports and updates being spendable by other transactions
