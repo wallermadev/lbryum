@@ -1,4 +1,4 @@
-LBRYUM_VERSION = '2.7.4'    # version of the client package
+LBRYUM_VERSION = '2.7.5'    # version of the client package
 PROTOCOL_VERSION = '0.10'   # protocol version requested
 NEW_SEED_VERSION = 11       # lbryum versions >= 2.0
 OLD_SEED_VERSION = 4        # lbryum versions < 2.0
