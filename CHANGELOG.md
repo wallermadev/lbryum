@@ -10,5 +10,6 @@ labeled as 2.7.1. Subsequent releases will follow
 ### Changed
  * Improve packaging of data files to support building with pyinstaller
 
+## [2.7.5] - 2017-02-15
 ### Fixed
  * Fixed user's supports and updates being spendable by other transactions
