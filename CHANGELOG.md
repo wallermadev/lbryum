@@ -7,6 +7,22 @@ labeled as 2.7.1. Subsequent releases will follow
 [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### Added
+  *
+  *
+  *
+
+### Changed
+  *
+  *
+  *
+
+### Fixed
+  *
+  *
+  *
+
+## [2.7.8] - 2017-02-27
 ### Fixed
  * Make requests for individual headers after requesting chunks
 
