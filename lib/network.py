@@ -669,10 +669,17 @@ class Network(util.DaemonThread):
                     self.switch_to_interface(self.default_server)
 
     def request_chunk(self, interface, data, idx):
-        interface.print_error("requesting chunk %d" % idx)
+        log.debug("requesting chunk %d" % idx)
         self.queue_request('blockchain.block.get_chunk', [idx], interface)
         data['chunk_idx'] = idx
         data['req_time'] = time.time()
+
+
+    def _caught_up_to_interface(self, data):
+        return self.get_local_height() >= data['if_height']
+
+    def _need_chunk_from_interface(self, data):
+        return self.get_local_height() + BLOCKS_PER_CHUNK <= data['if_height']
 
     def on_get_chunk(self, interface, response):
         '''Handle receiving a chunk of block headers'''
@@ -682,15 +689,16 @@ class Network(util.DaemonThread):
             # Ignore unsolicited chunks
             if req_if == interface and req_idx == response['params'][0]:
                 idx = self.blockchain.connect_chunk(req_idx, response['result'])
-                # If not finished, get the next chunk
-                if idx < 0 or self.get_local_height() + BLOCKS_PER_CHUNK >= data['if_height']:
+                if idx < 0 or self._caught_up_to_interface(data):
                     self.bc_requests.popleft()
                     self.notify('updated')
-                else:
+                elif self._need_chunk_from_interface(data):
                     self.request_chunk(interface, data, idx)
+                else:
+                    self.request_header(interface, data, data['if_height'])
 
     def request_header(self, interface, data, height):
-        interface.print_error("requesting header %d" % height)
+        log.debug("requesting header %d" % height)
         self.queue_request('blockchain.block.get_header', [height], interface)
         data['header_height'] = height
         data['req_time'] = time.time()
