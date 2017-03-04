@@ -72,7 +72,7 @@ setup(
             'locale/*/LC_MESSAGES/lbryum.mo',
         ]
     },
-    #scripts=['lbryum'],
+    scripts=['lbryum'],
     data_files=data_files,
     description="Lightweight LBRYcrd Wallet",
     author="LBRY Inc.",
