@@ -998,10 +998,10 @@ class Abstract_Wallet(PrintError):
                         'address': addr,
                         'amount': float(value)/COIN,
                         'height': tx_height,
-                        'expiration height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
+                        'expiration_height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
                         'expired': expired,
                         'confirmations': local_height - tx_height,
-                        'is spent': txo in txis,
+                        'is_spent': txo in txis,
                     }
                     if txout[0] & TYPE_CLAIM:
                         output['category']='claim'
@@ -1023,7 +1023,7 @@ class Abstract_Wallet(PrintError):
                         output['value'] = claim_value
                         output['claim_id'] = lbrycrd.encode_claim_id_hex(claim_id)
                     if not expired:
-                        output['blocks to expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
+                        output['blocks_to_expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
                     claims.append(output)
         return claims
 
