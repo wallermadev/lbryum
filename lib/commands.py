@@ -30,7 +30,7 @@ from decimal import Decimal
 import logging
 
 import util
-from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds
+from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds, format_lbrycrd_keys
 import lbrycrd
 from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
 from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE, RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
@@ -726,12 +726,14 @@ class Commands:
     @command('n')
     def getclaimsfromtx(self, txid):
         """Return the claims which are in a transaction"""
-        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+        out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+        return format_lbrycrd_keys(out)
 
     @command('n')
     def getclaimsforname(self, name):
         """Return all claims and supports for a name"""
-        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
+        out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
+        return format_lbrycrd_keys(out)
 
     @command('n')
     def getblock(self, blockhash):
