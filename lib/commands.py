@@ -663,7 +663,7 @@ class Commands:
             r = {
                     'value': value,
                     'txid': txid,
-                    'n': n,
+                    'nout': n,
                     'amount': amount,
                     'height': height
                 }

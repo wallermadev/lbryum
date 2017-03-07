@@ -994,7 +994,7 @@ class Abstract_Wallet(PrintError):
                     expired = tx_height + lbrycrd.EXPIRATION_BLOCKS <= local_height
                     output = {
                         'txid': prevout_hash,
-                        'nOut': int(prevout_n),
+                        'nout': int(prevout_n),
                         'address': addr,
                         'amount': float(value)/COIN,
                         'height': tx_height,
@@ -1008,7 +1008,7 @@ class Abstract_Wallet(PrintError):
                         claim_name, claim_value = txout[1][0]
                         output['name'] = claim_name
                         output['value'] = claim_value
-                        claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nOut'])
+                        claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nout'])
                         claim_id = lbrycrd.encode_claim_id_hex(claim_id)
                         output['claim_id'] = claim_id
                     elif txout[0] & TYPE_SUPPORT:
