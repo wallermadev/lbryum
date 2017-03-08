@@ -996,7 +996,7 @@ class Abstract_Wallet(PrintError):
                         'txid': prevout_hash,
                         'nOut': int(prevout_n),
                         'address': addr,
-                        'amount': float(value)/COIN,
+                        'amount': value,
                         'height': tx_height,
                         'expiration height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
                         'expired': expired,
