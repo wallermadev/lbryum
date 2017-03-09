@@ -27,6 +27,7 @@ import copy
 import re
 from functools import partial
 from unicodedata import normalize
+from decimal import Decimal
 from i18n import _
 
 from util import NotEnoughFunds, PrintError, profiler
@@ -996,7 +997,7 @@ class Abstract_Wallet(PrintError):
                         'txid': prevout_hash,
                         'nout': int(prevout_n),
                         'address': addr,
-                        'amount': float(value)/COIN,
+                        'amount': str(Decimal(value)/lbrycrd.COIN),
                         'height': tx_height,
                         'expiration_height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
                         'expired': expired,

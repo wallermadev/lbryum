@@ -30,7 +30,7 @@ from decimal import Decimal
 import logging
 
 import util
-from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds, format_lbrycrd_keys
+from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds
 import lbrycrd
 from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADDRESS, Hash
 from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE, RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
@@ -44,8 +44,44 @@ from claims import verify_proof, InvalidProofError
 
 log = logging.getLogger(__name__)
 
-
 known_commands = {}
+
+def format_lbrycrd_keys(obj):
+    if isinstance(obj, dict):
+        for key, val in obj.iteritems():
+            new_key = key
+            if key == 'n' or key == 'nOut':
+                new_key = 'nout'
+            elif key == 'nAmount':
+                new_key = 'amount'
+            elif key == 'nEffectiveAmount':
+                new_key = 'effective_amount'
+            elif key == 'claimId':
+                new_key = 'claim_id'
+            elif key == 'nHeight':
+                new_key = 'height'
+            elif key == 'nValidAtHeight':
+                new_key = 'valid_at_height'
+            elif key == 'nLastTakeoverHeight':
+                new_key = 'last_takeover_height'
+            elif key == 'supports without claims':
+                new_key = 'supports_without_claims'
+            elif key == 'is controlling':
+                new_key = 'is_controlling'
+            elif key == 'in claim trie':
+                new_key = 'in_claim_trie'
+            if new_key != key:
+                obj[new_key] = obj[key]
+                del obj[key]
+            if new_key in ['amount', 'effective_amount'] :
+                obj[new_key] = str(Decimal(obj[new_key])/COIN)
+
+            if isinstance(val, list) or isinstance(val, dict):
+                obj[new_key] = format_lbrycrd_keys(val)
+
+    elif isinstance(obj, list):
+        obj = [ format_lbrycrd_keys(o) for o in obj ]
+    return obj
 
 
 class Command:
@@ -664,7 +700,7 @@ class Commands:
                     'value': value,
                     'txid': txid,
                     'nout': n,
-                    'amount': amount,
+                    'amount': str(Decimal(amount)/COIN),
                     'height': height
                 }
             return r

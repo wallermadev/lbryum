@@ -15,40 +15,6 @@ log = logging.getLogger("lbryum")
 
 base_units = {'BTC':8, 'mBTC':5, 'uBTC':2}
 
-def format_lbrycrd_keys(obj):
-    if isinstance(obj, dict):
-        for key, val in obj.iteritems():
-            new_key = key
-            if key == 'n' or key == 'nOut':
-                new_key = 'nout'
-            elif key == 'nAmount':
-                new_key = 'amount'
-            elif key == 'nEffectiveAmount':
-                new_key = 'effective_amount'
-            elif key == 'claimId':
-                new_key = 'claim_id'
-            elif key == 'nHeight':
-                new_key = 'height'
-            elif key == 'nValidAtHeight':
-                new_key = 'valid_at_height'
-            elif key == 'nLastTakeoverHeight':
-                new_key = 'last_takeover_height'
-            elif key == 'supports without claims':
-                new_key = 'supports_without_claims'
-            elif key == 'is controlling':
-                new_key = 'is_controlling'
-            elif key == 'in claim trie':
-                new_key = 'in_claim_trie'
-            if new_key != key:
-                obj[new_key] = obj[key]
-                del obj[key]
-            if isinstance(val, list) or isinstance(val, dict):
-                obj[new_key] = format_lbrycrd_keys(val)
-
-    elif isinstance(obj, list):
-        obj = [ format_lbrycrd_keys(o) for o in obj ]
-    return obj
-
 def normalize_version(v):
     return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
 
