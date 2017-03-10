@@ -69,7 +69,7 @@ class Test_Commands(unittest.TestCase):
         self.assertEqual(1, out[1]['nout'][0]['nout'])
 
         a={'amount':100000000}
-        out = commands.format_lbrycrd_keys(a)
+        out = commands.format_amount(a)
         self.assertEqual('1',out['amount'])
 
 
