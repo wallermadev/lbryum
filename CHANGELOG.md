@@ -13,7 +13,7 @@ labeled as 2.7.1. Subsequent releases will follow
   *
 
 ### Changed
-  * Make key names in dictionary outputs more consistent
+  *
   *
   *
 
@@ -21,6 +21,10 @@ labeled as 2.7.1. Subsequent releases will follow
   *
   *
   *
+
+## [2.7.12] - 2017-03-10
+### Changed
+ * Make key names in dictionary outputs more consistent
 
 ## [2.7.8] - 2017-02-27
 ### Fixed
