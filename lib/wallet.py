@@ -27,6 +27,7 @@ import copy
 import re
 from functools import partial
 from unicodedata import normalize
+from decimal import Decimal
 from i18n import _
 
 from util import NotEnoughFunds, PrintError, profiler
@@ -994,21 +995,21 @@ class Abstract_Wallet(PrintError):
                     expired = tx_height + lbrycrd.EXPIRATION_BLOCKS <= local_height
                     output = {
                         'txid': prevout_hash,
-                        'nOut': int(prevout_n),
+                        'nout': int(prevout_n),
                         'address': addr,
-                        'amount': float(value)/COIN,
+                        'amount': str(Decimal(value)/lbrycrd.COIN),
                         'height': tx_height,
-                        'expiration height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
+                        'expiration_height': tx_height + lbrycrd.EXPIRATION_BLOCKS,
                         'expired': expired,
                         'confirmations': local_height - tx_height,
-                        'is spent': txo in txis,
+                        'is_spent': txo in txis,
                     }
                     if txout[0] & TYPE_CLAIM:
                         output['category']='claim'
                         claim_name, claim_value = txout[1][0]
                         output['name'] = claim_name
                         output['value'] = claim_value
-                        claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nOut'])
+                        claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nout'])
                         claim_id = lbrycrd.encode_claim_id_hex(claim_id)
                         output['claim_id'] = claim_id
                     elif txout[0] & TYPE_SUPPORT:
@@ -1023,7 +1024,7 @@ class Abstract_Wallet(PrintError):
                         output['value'] = claim_value
                         output['claim_id'] = lbrycrd.encode_claim_id_hex(claim_id)
                     if not expired:
-                        output['blocks to expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
+                        output['blocks_to_expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
                     claims.append(output)
         return claims
 

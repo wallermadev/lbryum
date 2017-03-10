@@ -46,6 +46,32 @@ class Test_Commands(unittest.TestCase):
         self.assertEqual(False, out['success'])
         self.assertEqual('Not enough funds', out['reason'])
 
+    def test_format_lbrycrd_keys(self):
+        a = {'test': 1,
+         'nOut': 1}
+        out = commands.format_lbrycrd_keys(a)
+        self.assertTrue('nout' in out)
+        self.assertFalse('nOut' in out)
+        self.assertEqual(1, out['nout'])
+        self.assertEqual(1, out['test'])
+
+        a = [{'test': 1,
+          'nOut': 1}, {'test': 1,
+          'nOut': [{'nOut': 1}]}]
+        out = commands.format_lbrycrd_keys(a)
+        self.assertTrue('nout' in out[0])
+        self.assertFalse('nOut' in out[0])
+        self.assertEqual(1, out[0]['nout'])
+        self.assertTrue('nout' in out[1])
+        self.assertFalse('nOut' in out[1])
+        self.assertTrue('nout' in out[1]['nout'][0])
+        self.assertFalse('nOut' in out[1]['nout'][0])
+        self.assertEqual(1, out[1]['nout'][0]['nout'])
+
+        a={'amount':100000000}
+        out = commands.format_amount(a)
+        self.assertEqual('1',out['amount'])
+
 
 
 

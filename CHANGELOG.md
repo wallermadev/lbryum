@@ -13,7 +13,7 @@ labeled as 2.7.1. Subsequent releases will follow
   *
 
 ### Changed
-  *
+  * Make key names in dictionary outputs more consistent
   *
   *
 

@@ -44,8 +44,56 @@ from claims import verify_proof, InvalidProofError
 
 log = logging.getLogger(__name__)
 
-
 known_commands = {}
+
+# Format output from lbrycrd to have consistently
+# named ditionary keys
+def format_lbrycrd_keys(obj):
+    if isinstance(obj, dict):
+        for key, val in obj.iteritems():
+            new_key = key
+            if key == 'n' or key == 'nOut':
+                new_key = 'nout'
+            elif key == 'nAmount':
+                new_key = 'amount'
+            elif key == 'nEffectiveAmount':
+                new_key = 'effective_amount'
+            elif key == 'claimId':
+                new_key = 'claim_id'
+            elif key == 'nHeight':
+                new_key = 'height'
+            elif key == 'nValidAtHeight':
+                new_key = 'valid_at_height'
+            elif key == 'nLastTakeoverHeight':
+                new_key = 'last_takeover_height'
+            elif key == 'supports without claims':
+                new_key = 'supports_without_claims'
+            elif key == 'is controlling':
+                new_key = 'is_controlling'
+            elif key == 'in claim trie':
+                new_key = 'in_claim_trie'
+            if new_key != key:
+                obj[new_key] = obj[key]
+                del obj[key]
+
+            if isinstance(val, list) or isinstance(val, dict):
+                obj[new_key] = format_lbrycrd_keys(val)
+
+    elif isinstance(obj, list):
+        obj = [ format_lbrycrd_keys(o) for o in obj ]
+    return obj
+
+# Format amount to be decimal encoded string
+def format_amount(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.iteritems():
+            if k == 'amount' or k == 'effective_amount':
+                obj[k] = str(Decimal(obj[k])/COIN)
+            if isinstance(v, list) or isinstance(v, dict):
+                obj[k] = format_amount(v)
+    elif isinstance(obj, list):
+        obj = [ format_amount(o) for o in obj ]
+    return obj
 
 
 class Command:
@@ -663,8 +711,8 @@ class Commands:
             r = {
                     'value': value,
                     'txid': txid,
-                    'n': n,
-                    'amount': amount,
+                    'nout': n,
+                    'amount': str(Decimal(amount)/COIN),
                     'height': height
                 }
             return r
@@ -726,12 +774,14 @@ class Commands:
     @command('n')
     def getclaimsfromtx(self, txid):
         """Return the claims which are in a transaction"""
-        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+        out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
+        return format_amount(format_lbrycrd_keys(out))
 
     @command('n')
     def getclaimsforname(self, name):
         """Return all claims and supports for a name"""
-        return self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
+        out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
+        return format_amount(format_lbrycrd_keys(out))
 
     @command('n')
     def getblock(self, blockhash):
