@@ -75,8 +75,8 @@ setup(
     #scripts=['lbryum'],
     data_files=data_files,
     description="Lightweight LBRYcrd Wallet",
-    author="LBRY",
-    author_email="jimmy@lbry.io",
+    author="LBRY Inc.",
+    author_email="hello@lbry.io",
     license="GNU GPLv3",
     url="https://lbry.io",
     long_description="""Lightweight LBRYcrd Wallet"""
