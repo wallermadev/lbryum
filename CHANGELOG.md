@@ -8,8 +8,8 @@ labeled as 2.7.1. Subsequent releases will follow
 
 ## [Unreleased]
 ### Added
-  *
-  *
+  * setup.py will install lbryum as a script
+  * added functions for lbrynet in commands.py
   *
 
 ### Changed
