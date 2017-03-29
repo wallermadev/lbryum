@@ -496,9 +496,15 @@ class Commands:
     def getunusedaddress(self, account=None):
         addr = self.wallet.get_unused_address(account)
         if addr is None:
-            addr = self.wallet.create_new_address()
-            self.wallet.storage.write() 
-        return addr 
+            addr = self.wallet.create_new_address(account)
+            self.wallet.storage.write()
+        return addr
+
+    @command('wp')
+    def getnewaddress(self, account=None):
+        addr = self.wallet.create_new_address(account)
+        self.wallet.storage.write()
+        return addr
 
     @command('wp')
     def payto(self, destination, amount, tx_fee=None, from_addr=None, change_addr=None, nocheck=False, unsigned=False):
@@ -795,6 +801,11 @@ class Commands:
     def getblock(self, blockhash):
         """Return a block matching the given blockhash"""
         return self.network.synchronous_get(('blockchain.block.get_block', [blockhash]))
+
+    @command('n')
+    def getblockhash(self,height):
+        header = self.network.blockchain.read_header(height)
+        return self.network.blockchain.hash_header(header)
 
     @command('n')
     def getbestblockhash(self):
