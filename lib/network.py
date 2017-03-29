@@ -835,7 +835,11 @@ class Network(util.DaemonThread):
     def synchronous_get(self, request, timeout=30):
         queue = Queue.Queue()
         self.send([request], queue.put)
-        r = queue.get(True, timeout)
+        try:
+            r = queue.get(True, timeout)
+        except Queue.Empty:
+            msg='Failed to get response from server within timeout of {}'.format(timeout)
+            raise BaseException(msg)
         if r.get('error'):
             raise BaseException(r.get('error'))
         return r.get('result')
