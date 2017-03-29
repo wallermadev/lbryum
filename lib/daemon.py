@@ -66,7 +66,7 @@ class Daemon(DaemonThread):
         self.network = network
         self.gui = None
         self.wallets = {}
-        self.wallet = None
+        self.wallet = self.load_wallet(config.get_wallet_path())
         self.cmd_runner = Commands(self.config, self.wallet, self.network)
         host = config.get('rpchost', 'localhost')
         port = config.get('rpcport', 0)
