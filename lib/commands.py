@@ -744,6 +744,7 @@ class Commands:
                                 return {'error': 'failed to decode as claim script'}
                             n,script = decode_out
                             decoded_name, decoded_value = n.name, n.value
+                            decoded_value = decoded_value.encode('hex')
                             if decoded_name == name:
                                 return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
                             return {'error': 'name in proof did not match requested name'}
