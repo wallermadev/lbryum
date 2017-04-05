@@ -248,9 +248,13 @@ class Interface(util.PrintError):
         return self.socket.fileno()
 
     def close(self):
-        if not self.closed_remotely:
-            self.socket.shutdown(socket.SHUT_RDWR)
-        self.socket.close()
+        try:
+            if not self.closed_remotely:
+                self.socket.shutdown(socket.SHUT_RDWR)
+        except socket.error as err:
+            self.print_error("Error closing interface: %s (%s)" % (str(type(err)), err))
+        finally:
+            self.socket.close()
 
     def queue_request(self, *args):  # method, params, _id
         '''Queue a request, later to be send with send_requests when the
