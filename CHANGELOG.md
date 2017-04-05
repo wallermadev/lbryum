@@ -13,7 +13,7 @@ labeled as 2.7.1. Subsequent releases will follow
   *
 
 ### Changed
-  *
+  * Encode claim values as a hex string
   *
   *
 

@@ -84,16 +84,20 @@ def format_lbrycrd_keys(obj):
     return obj
 
 # Format amount to be decimal encoded string
-def format_amount(obj):
+# Format value to be hex encoded string
+def format_amount_value(obj):
     if isinstance(obj, dict):
         for k, v in obj.iteritems():
             if k == 'amount' or k == 'effective_amount':
                 obj[k] = str(Decimal(obj[k])/COIN)
+            if k == 'value':
+                obj[k] = obj[k].encode('raw_unicode_escape').encode('hex')
             if isinstance(v, list) or isinstance(v, dict):
-                obj[k] = format_amount(v)
+                obj[k] = format_amount_value(v)
     elif isinstance(obj, list):
-        obj = [ format_amount(o) for o in obj ]
+        obj = [ format_amount_value(o) for o in obj ]
     return obj
+
 
 
 class Command:
@@ -744,6 +748,7 @@ class Commands:
                                 return {'error': 'failed to decode as claim script'}
                             n,script = decode_out
                             decoded_name, decoded_value = n.name, n.value
+                            decoded_value = decoded_value.encode('hex')
                             if decoded_name == name:
                                 return _build_response(decoded_value, computed_txhash, nOut, effective_amount, h)
                             return {'error': 'name in proof did not match requested name'}
@@ -783,13 +788,13 @@ class Commands:
     def getclaimsfromtx(self, txid):
         """Return the claims which are in a transaction"""
         out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsintx', [txid]))
-        return format_amount(format_lbrycrd_keys(out))
+        return format_amount_value(format_lbrycrd_keys(out))
 
     @command('n')
     def getclaimsforname(self, name):
         """Return all claims and supports for a name"""
         out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
-        return format_amount(format_lbrycrd_keys(out))
+        return format_amount_value(format_lbrycrd_keys(out))
 
     @command('n')
     def getblock(self, blockhash):

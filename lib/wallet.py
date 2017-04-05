@@ -1008,7 +1008,7 @@ class Abstract_Wallet(PrintError):
                         output['category']='claim'
                         claim_name, claim_value = txout[1][0]
                         output['name'] = claim_name
-                        output['value'] = claim_value
+                        output['value'] = claim_value.encode('hex')
                         claim_id = lbrycrd.claim_id_hash(rev_hex(output['txid']).decode('hex'),output['nout'])
                         claim_id = lbrycrd.encode_claim_id_hex(claim_id)
                         output['claim_id'] = claim_id
@@ -1021,7 +1021,7 @@ class Abstract_Wallet(PrintError):
                         output['category']='update'
                         claim_name, claim_id, claim_value = txout[1][0]
                         output['name'] = claim_name
-                        output['value'] = claim_value
+                        output['value'] = claim_value.encode('hex')
                         output['claim_id'] = lbrycrd.encode_claim_id_hex(claim_id)
                     if not expired:
                         output['blocks_to_expiration'] = tx_height + lbrycrd.EXPIRATION_BLOCKS - local_height
