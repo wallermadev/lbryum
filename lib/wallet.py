@@ -1004,6 +1004,19 @@ class Abstract_Wallet(PrintError):
                         'confirmations': local_height - tx_height,
                         'is_spent': txo in txis,
                     }
+                    if tx_height:
+                        output['height'] = tx_height
+                        output['expiration_height'] = tx_height + lbrycrd.EXPIRATION_BLOCKS
+                        output['expired'] = expired
+                        output['confirmations'] = local_height - tx_height
+                        output['is_pending'] = False
+                    else:
+                        output['height'] = None
+                        output['expiration_height'] = None
+                        output['expired'] = expired
+                        output['confirmations'] = None
+                        output['is_pending'] = True
+
                     if txout[0] & TYPE_CLAIM:
                         output['category']='claim'
                         claim_name, claim_value = txout[1][0]
