@@ -166,7 +166,6 @@ class Network(util.DaemonThread):
         self.message_id = 0
         self.debug = False
         self.irc_servers = {} # returned by interface (list from irc)
-        self.recent_servers = self.read_recent_servers()
 
         self.banner = ''
         self.fee = None
@@ -223,28 +222,6 @@ class Network(util.DaemonThread):
         with self.lock:
             callbacks = self.callbacks[event][:]
         [callback(event, *args) for callback in callbacks]
-
-    def read_recent_servers(self):
-        if not self.config.path:
-            return []
-        path = os.path.join(self.config.path, "recent_servers")
-        try:
-            with open(path, "r") as f:
-                data = f.read()
-                return json.loads(data)
-        except:
-            return []
-
-    def save_recent_servers(self):
-        if not self.config.path:
-            return
-        path = os.path.join(self.config.path, "recent_servers")
-        s = json.dumps(self.recent_servers, indent=4, sort_keys=True)
-        try:
-            with open(path, "w") as f:
-                f.write(s)
-        except:
-            pass
 
     def get_server_height(self):
         return self.heights.get(self.default_server, 0)
@@ -345,13 +322,6 @@ class Network(util.DaemonThread):
             out = self.irc_servers
         else:
             out = self.online_servers
-            for s in self.recent_servers:
-                try:
-                    host, port, protocol = deserialize_server(s)
-                except:
-                    continue
-                if host not in out:
-                    out[host] = { protocol:port }
         return out
 
     def start_interface(self, server):
@@ -468,14 +438,6 @@ class Network(util.DaemonThread):
             if interface.server == self.default_server:
                 self.interface = None
             interface.close()
-
-    def add_recent_server(self, server):
-        # list is ordered
-        if server in self.recent_servers:
-            self.recent_servers.remove(server)
-        self.recent_servers.insert(0, server)
-        self.recent_servers = self.recent_servers[0:20]
-        self.save_recent_servers()
 
     def process_response(self, interface, response, callbacks):
         if self.debug:
@@ -620,7 +582,6 @@ class Network(util.DaemonThread):
             self.notify('interfaces')
 
     def new_interface(self, server, socket):
-        self.add_recent_server(server)
         self.interfaces[server] = interface = Interface(server, socket)
         self.queue_request('blockchain.headers.subscribe', [], interface)
         if server == self.default_server:
