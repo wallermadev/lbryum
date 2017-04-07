@@ -25,6 +25,7 @@ import time
 import json
 import copy
 import re
+
 from functools import partial
 from unicodedata import normalize
 from decimal import Decimal
@@ -48,6 +49,7 @@ import paymentrequest
 
 # internal ID for imported account
 IMPORTED_ACCOUNT = '/x'
+
 
 class WalletStorage(PrintError):
 
@@ -202,6 +204,9 @@ class Abstract_Wallet(PrintError):
 
         self.check_history()
 
+        self.claim_certificates = storage.get('claim_certificates', {})
+        self.default_certificate_claim = storage.get('default_certificate_claim', None)
+
         # save wallet type the first time
         if self.storage.get('wallet_type') is None:
             self.storage.put('wallet_type', self.wallet_type)
@@ -222,7 +227,7 @@ class Abstract_Wallet(PrintError):
         self.txo = self.storage.get('txo', {})
         self.pruned_txo = self.storage.get('pruned_txo', {})
         tx_list = self.storage.get('transactions', {})
-        self.claimtrie_transactions = self.storage.get('claimtrie_transactions',{})
+        self.claimtrie_transactions = self.storage.get('claimtrie_transactions', {})
         self.transactions = {}
         for tx_hash, raw in tx_list.items():
             tx = Transaction(raw)
@@ -237,9 +242,6 @@ class Abstract_Wallet(PrintError):
                 if txout[0] & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                     self.claimtrie_transactions[tx_hash+':'+str(n)] = txout[0]
 
-
-
-
     @profiler
     def save_transactions(self, write=False):
         with self.transaction_lock:
@@ -251,9 +253,27 @@ class Abstract_Wallet(PrintError):
             self.storage.put('txo', self.txo)
             self.storage.put('pruned_txo', self.pruned_txo)
             self.storage.put('addr_history', self.history)
-            self.storage.put('claimtrie_transactions',self.claimtrie_transactions)
+            self.storage.put('claimtrie_transactions', self.claimtrie_transactions)
             if write:
                 self.storage.write()
+
+    def save_certificate(self, claim_id, private_key, write=False):
+        certificate_keys = self.storage.get('claim_certificates') or {}
+        certificate_keys[claim_id] = private_key
+        self.storage.put('claim_certificates', certificate_keys)
+        if write:
+            self.storage.write()
+
+    def set_default_certificate(self, claim_id, overwrite_existing=True, write=False):
+        if self.default_certificate_claim is not None and overwrite_existing or not self.default_certificate_claim:
+            self.storage.put('default_certificate_claim', claim_id)
+            if write:
+                self.storage.write()
+            self.default_certificate_claim = claim_id
+
+    def get_certificate_signing_key(self, claim_id):
+        certificates = self.storage.get('claim_certificates')
+        return certificates.get(claim_id, None)
 
     def clear_history(self):
         with self.transaction_lock:
