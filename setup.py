@@ -40,7 +40,8 @@ setup(
         'dnspython',
         'jsonrpclib',
         'six>=1.9.0',
-        'appdirs'
+        'appdirs',
+        'lbryschema==0.0.1'
     ],
     packages=[
         'lbryum',
