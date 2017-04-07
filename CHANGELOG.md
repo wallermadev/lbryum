@@ -10,13 +10,32 @@ labeled as 2.7.1. Subsequent releases will follow
 ### Added
   * setup.py will install lbryum as a script
   * added functions for lbrynet in commands.py
-  *
-
+  * add channel related commands:
+   - `getclaimbynameinchannel`
+   - `getdefaultcertificate`
+   - `getvalueforuri`
+   - `getsignaturebyid`
+   - `getclaimbyoutpoint`
+   - `getclaimssignedby`
+   - `getclaimsinchannel`
+   - `getclaimbyid`
+   - `getnthclaimforname`
+   - `getcertificateclaims`
+   - `claimcertificate`
+   - `updateclaimsignature`
+   - `updatecertificate`
+   - `cansignwithcertificate`
+      
 ### Changed
-  * Encode claim values as a hex string
-  *
-  *
-
+  * include claim address in return from getvalueforname
+  * change `abandon` to take `claim_id` instead of `txid` and `nout`
+  * change default `amount` in update to None, if `amount` is none use the existing claim amount
+  * change `update` to determine (and not require) `claim_id`, `txid`, and `nout` from a given `name`
+  * change `claim` to not make a second first-claim if a claim for the name already exists in the wallet unless specified
+  * add `claim_sequence` and `claim_address` to claim responses
+  * by default expect a hex encoded `val` for `claim` and `update`
+  * automatically handle claim signing using default certificate (if one has been made) via `claim` and `update` commands
+  
 ### Fixed
   *
   *
