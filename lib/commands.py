@@ -783,12 +783,13 @@ class Commands:
         return False
 
     @staticmethod
-    def _verify_proof(name, claim_trie_root, result):
+    def _verify_proof(name, claim_trie_root, result, height, depth):
         """
         Verify proof for name claim
         """
 
-        def _build_response(name, value, claim_id, txid, n, amount, height, claim_sequence, claim_address):
+        def _build_response(name, value, claim_id, txid, n, amount, effective_amount,
+                            claim_sequence, claim_address):
             r = {
                     'name': name,
                     'value': value.encode('hex'),
@@ -796,7 +797,9 @@ class Commands:
                     'txid': txid,
                     'nout': n,
                     'amount': str(Decimal(amount)/COIN),
+                    'effective_amount': str(Decimal(effective_amount) / COIN),
                     'height': height,
+                    'depth': depth,
                     'claim_sequence': claim_sequence,
                     'address': claim_address,
                 }
@@ -814,7 +817,6 @@ class Commands:
                             scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
                             amount = tx['outputs'][nOut]['value']
                             effective_amount = amount + support_amount
-                            h = tx['lockTime'] + 1
                             decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
                             decode_out = decode_claim_script(decoded_script)
                             decode_address = get_address_from_output_script(scriptPubKey.decode('hex'))
@@ -826,7 +828,10 @@ class Commands:
                             n, script = decode_out
                             decoded_name, decoded_value = n.name, n.value
                             if decoded_name == name:
-                                return _build_response(name, decoded_value, claim_id, computed_txhash, nOut, effective_amount, h, claim_sequence, claim_address)
+                                return _build_response(name, decoded_value, claim_id,
+                                                       computed_txhash, nOut, amount,
+                                                       effective_amount, claim_sequence,
+                                                       claim_address)
                             return {'error': 'name in proof did not match requested name'}
                         return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                     return {'error': "computed txid did not match given transaction: %s vs %s" %
@@ -865,7 +870,12 @@ class Commands:
         block_header = self.network.blockchain.read_header(height)
         block_hash = self.network.blockchain.hash_header(block_header)
         response = self.requestvalueforname(name, block_hash)
-        result = Commands._verify_proof(name, block_header['claim_trie_root'], response)
+        height, depth = None, None
+        if response and 'height' in response:
+            height = response['height']
+            depth = self.network.get_server_height() - height
+        result = Commands._verify_proof(name, block_header['claim_trie_root'], response,
+                                        height, depth)
         return self.parse_and_validate_claim_result(result, raw)
 
     @command('n')
@@ -930,6 +940,8 @@ class Commands:
         for k in result:
             if 'error' in result[k]:
                 return result[k]
+        if not result.get('claim', False) and not result.get('certificate', False) and not result.get('claims_in_channel', False) and not result.get('error', False):
+            return {'error': 'nothing to resolve'}
         return result
 
     @command('n')
@@ -1005,8 +1017,9 @@ class Commands:
         Request claims signed by a given certificate
         """
 
-        claims = self.network.synchronous_get(('blockchain.claimtrie.getclaimssignedbyid',
+        result = self.network.synchronous_get(('blockchain.claimtrie.getclaimssignedbyid',
                                                [claim_id]))
+        claims = format_amount_value(result)
         return [self.parse_and_validate_claim_result(claim, raw) for claim in claims]
 
     @command('n')
@@ -1028,7 +1041,8 @@ class Commands:
             claims = self.network.synchronous_get(('blockchain.claimtrie.getclaimssignedby',
                                                  [parsed.name]))
         if claims:
-            return [self.parse_and_validate_claim_result(claim, raw) for claim in claims]
+            result = format_amount_value(claims)
+            return [self.parse_and_validate_claim_result(claim, raw) for claim in result]
         return []
 
     @command('n')
@@ -1081,7 +1095,8 @@ class Commands:
         """
 
         result = self.network.synchronous_get(('blockchain.claimtrie.getclaimbyid', [claim_id]))
-        return self.parse_and_validate_claim_result(result, raw)
+        claims = format_amount_value(result)
+        return self.parse_and_validate_claim_result(claims, raw)
 
     @command('n')
     def getnthclaimforname(self, name, n, raw=False):
@@ -1091,7 +1106,8 @@ class Commands:
 
         result = self.network.synchronous_get(('blockchain.claimtrie.getnthclaimforname',
                                                [name, n]))
-        return self.parse_and_validate_claim_result(result, raw)
+        claims = format_amount_value(result)
+        return self.parse_and_validate_claim_result(claims, raw)
 
     @command('w')
     def getnameclaims(self, raw=False, include_abandoned=False):
@@ -1100,8 +1116,9 @@ class Commands:
         """
 
         result = self.wallet.get_name_claims()
+        claims = format_amount_value(result)
         name_claims = []
-        for claim in result:
+        for claim in claims:
             parsed = self.parse_and_validate_claim_result(claim, raw)
             if not include_abandoned and parsed['is_spent']:
                 continue
@@ -1117,7 +1134,7 @@ class Commands:
         """
 
         certificate_claims = []
-        for claim in self.wallet.get_name_claims():
+        for claim in format_lbrycrd_keys(self.wallet.get_name_claims()):
             if not include_abandoned and claim['is_spent']:
                 continue
             try:
