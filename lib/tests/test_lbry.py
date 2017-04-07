@@ -66,7 +66,7 @@ class Test_Lbry(unittest.TestCase):
 
     def test_commands_wrapper_for_verify_proof(self):
         result = {}
-        out = commands.Commands._verify_proof('test','test',result)
+        out = commands.Commands._verify_proof('test','test',result, 100, 10)
         self.assertTrue('error' in out)
 
         # valid proof and root has taken from test_verify_proof()
@@ -74,7 +74,7 @@ class Test_Lbry(unittest.TestCase):
         valid_root_hash='198e65bd4c3b66681fac1b8a0b9850cf28dc5df33a86b67cbd72cc7e5d93ba49'
         result={'proof':valid_proof,'supports':[]}
 
-        out = commands.Commands._verify_proof('a',valid_root_hash,result)
+        out = commands.Commands._verify_proof('a',valid_root_hash,result, 100, 10)
         self.assertTrue('error' in out)
 
     def test_claimid_hash(self):
