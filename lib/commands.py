@@ -1123,7 +1123,7 @@ class Commands:
             if not include_abandoned and parsed['is_spent']:
                 continue
             else:
-                name_claims.append(parsed)
+                name_claims.append(format_amount_value(parsed))
 
         return name_claims
 
@@ -1148,7 +1148,7 @@ class Commands:
                     certificate_claims.append(cert_result)
             except DecodeError:
                 pass
-        return certificate_claims
+        return format_amount_value(certificate_claims)
 
     def _calculate_fee(self, inputs, outputs, set_tx_fee):
         if set_tx_fee is not None:
