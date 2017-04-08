@@ -11,20 +11,20 @@ labeled as 2.7.1. Subsequent releases will follow
   * setup.py will install lbryum as a script
   * added functions for lbrynet in commands.py
   * add channel related commands:
-   - `getclaimbynameinchannel`
-   - `getdefaultcertificate`
-   - `getvalueforuri`
-   - `getsignaturebyid`
-   - `getclaimbyoutpoint`
-   - `getclaimssignedby`
-   - `getclaimsinchannel`
-   - `getclaimbyid`
-   - `getnthclaimforname`
-   - `getcertificateclaims`
-   - `claimcertificate`
-   - `updateclaimsignature`
-   - `updatecertificate`
-   - `cansignwithcertificate`
+    - `getclaimbynameinchannel`
+    - `getdefaultcertificate`
+    - `getvalueforuri`
+    - `getsignaturebyid`
+    - `getclaimbyoutpoint`
+    - `getclaimssignedby`
+    - `getclaimsinchannel`
+    - `getclaimbyid`
+    - `getnthclaimforname`
+    - `getcertificateclaims`
+    - `claimcertificate`
+    - `updateclaimsignature`
+    - `updatecertificate`
+    - `cansignwithcertificate`
       
 ### Changed
   * include claim address in return from getvalueforname
