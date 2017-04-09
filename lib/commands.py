@@ -1336,7 +1336,7 @@ class Commands:
                 'error': 'lbry://{}#{} has a valid signature already'.format(name, claim_id)
             }
 
-        return self.update(name, claim.serialized, amount=amount,
+        return self.update(name, claim.serialized_no_signature, amount=amount,
                            certificate_id=certificate_id, claim_id=claim_id, raw=True)
 
     @command('wpn')
