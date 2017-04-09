@@ -76,9 +76,9 @@ class Test_Commands(unittest.TestCase):
         self.assertFalse('nOut' in out[1]['nout'][0])
         self.assertEqual(1, out[1]['nout'][0]['nout'])
 
-        a={'amount':100000000}
+        a = {'amount': 100000000}
         out = commands.format_amount_value(a)
-        self.assertEqual('1',out['amount'])
+        self.assertEqual(1.0, out['amount'])
 
 
 

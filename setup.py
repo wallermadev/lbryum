@@ -41,7 +41,7 @@ setup(
         'jsonrpclib',
         'six>=1.9.0',
         'appdirs',
-        'lbryschema==0.0.1'
+        'lbryschema>=0.0.2'
     ],
     packages=[
         'lbryum',

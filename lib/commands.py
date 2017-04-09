@@ -110,8 +110,11 @@ def format_amount_value(obj):
     if isinstance(obj, dict):
         for k, v in obj.iteritems():
             if k == 'amount' or k == 'effective_amount':
-                obj[k] = str(Decimal(obj[k])/COIN)
-            if isinstance(v, list) or isinstance(v, dict):
+                obj[k] = float(obj[k]) / float(COIN)
+            elif k == 'supports' and isinstance(v, list):
+                obj[k] = [{'txid': txid, 'nout': nout, 'amount': float(amount) / float(COIN)}
+                          for (txid, nout, amount) in v]
+            elif isinstance(v, list) or isinstance(v, dict):
                 obj[k] = format_amount_value(v)
     elif isinstance(obj, list):
         obj = [ format_amount_value(o) for o in obj ]
@@ -793,7 +796,7 @@ class Commands:
         """
 
         def _build_response(name, value, claim_id, txid, n, amount, effective_amount,
-                            claim_sequence, claim_address):
+                            claim_sequence, claim_address, supports):
             r = {
                     'name': name,
                     'value': value.encode('hex'),
@@ -806,11 +809,14 @@ class Commands:
                     'depth': depth,
                     'claim_sequence': claim_sequence,
                     'address': claim_address,
+                    'supports': supports
                 }
             return r
 
         def _parse_proof_result(name, result):
             support_amount = sum(samount for stxid, sn, samount in result['supports'])
+            supports = [{'txid': stxid, 'nout': snout, 'amount': float(samount) / float(COIN)}
+                        for (stxid, snout, samount) in result['supports']]
             if 'txhash' in result['proof'] and 'nOut' in result['proof']:
                 if 'transaction' in result:
                     computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
@@ -835,7 +841,7 @@ class Commands:
                                 return _build_response(name, decoded_value, claim_id,
                                                        computed_txhash, nOut, amount,
                                                        effective_amount, claim_sequence,
-                                                       claim_address)
+                                                       claim_address, supports)
                             return {'error': 'name in proof did not match requested name'}
                         return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                     return {'error': "computed txid did not match given transaction: %s vs %s" %
@@ -1007,8 +1013,8 @@ class Commands:
         """
 
         out = self.network.synchronous_get(('blockchain.claimtrie.getclaimsforname', [name]))
-        result = format_amount_value(format_lbrycrd_keys(out, raw))
-        claims = result['claims']
+        result = format_lbrycrd_keys(out, raw)
+        claims = format_amount_value(result['claims'])
         claims_for_return = []
         for claim in claims:
             claims_for_return.append(self.parse_and_validate_claim_result(claim, raw))
@@ -1127,7 +1133,7 @@ class Commands:
             if not include_abandoned and parsed['is_spent']:
                 continue
             else:
-                name_claims.append(format_amount_value(parsed))
+                name_claims.append(parsed)
 
         return name_claims
 
