@@ -37,8 +37,8 @@ labeled as 2.7.1. Subsequent releases will follow
   * automatically handle claim signing using default certificate (if one has been made) via `claim` and `update` commands
   
 ### Fixed
-  *
-  *
+  * fix return amounts for claim list commands
+  * return supports list for claim queries
   *
 
 ## [2.7.12] - 2017-03-10
