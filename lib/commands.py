@@ -36,6 +36,7 @@ from lbryschema.signer import get_signer, SECP256k1
 from lbryschema.claim import ClaimDict
 from lbryschema.uri import parse_lbry_uri, URIParseError
 
+from lbrycrd import base_decode
 import util
 from util import print_msg, format_satoshis, print_stderr, NotEnoughFunds
 import lbrycrd
@@ -53,6 +54,7 @@ from claims import verify_proof, InvalidProofError
 log = logging.getLogger(__name__)
 
 known_commands = {}
+ADDRESS_LENGTH = 25
 
 # Format output from lbrycrd to have consistently
 # named ditionary keys
@@ -769,6 +771,8 @@ class Commands:
     @staticmethod
     def _validate_signed_claim(claim, claim_address, certificate):
         assert claim.has_signature, "Claim is not signed"
+        if not base_decode(claim_address, ADDRESS_LENGTH, 58):
+            raise Exception("Not given a valid claim address")
         try:
             if claim.validate_signature(claim_address, certificate.protobuf):
                 return True
@@ -1216,6 +1220,9 @@ class Commands:
             val = val.decode('hex')
         if claim_addr is None:
             claim_addr = self.wallet.create_new_address()
+        if not base_decode(claim_addr, ADDRESS_LENGTH, 58):
+            return {'error': 'invalid claim address'}
+
         if change_addr is None:
             change_addr = self.wallet.create_new_address(for_change=True)
         amount = int(COIN*amount)
@@ -1472,6 +1479,9 @@ class Commands:
             decoded_claim = None
         if claim_addr is None:
             claim_addr = self.wallet.create_new_address()
+        if not base_decode(claim_addr, ADDRESS_LENGTH, 58):
+            return {'error': 'invalid claim address'}
+
         if change_addr is None:
             change_addr = self.wallet.create_new_address(for_change=True)
         if claim_id is None or txid is None or nout is None:
