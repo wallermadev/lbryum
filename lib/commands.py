@@ -1612,7 +1612,7 @@ class Commands:
             dummy_outputs = [
                 (
                     TYPE_ADDRESS | TYPE_UPDATE,
-                    ((name, claim_id, val), claim_addr),
+                    ((name, decoded_claim_id, val), claim_addr),
                     get_inputs_for_amount
                 )
             ]
@@ -1630,7 +1630,7 @@ class Commands:
             outputs = [
                 (
                     TYPE_ADDRESS | TYPE_UPDATE,
-                    ((name, claim_id, val), claim_addr),
+                    ((name, decoded_claim_id, val), claim_addr),
                     amount
                 )
             ]
@@ -1645,7 +1645,7 @@ class Commands:
             dummy_outputs = [
                 (
                     TYPE_ADDRESS | TYPE_UPDATE,
-                    ((name, claim_id, val), claim_addr),
+                    ((name, decoded_claim_id, val), claim_addr),
                     amount
                 ),
                 (
@@ -1664,7 +1664,7 @@ class Commands:
             outputs = [
                 (
                     TYPE_ADDRESS | TYPE_UPDATE,
-                    ((name, claim_id, val), claim_addr),
+                    ((name, decoded_claim_id, val), claim_addr),
                     amount
                 ),
                 (
