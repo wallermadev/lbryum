@@ -1425,30 +1425,20 @@ class Commands:
             return {'error': 'Failed to decode URI: %s' % err}
 
         if parsed_uri.is_channel:
-            certificate_claim = self.getvalueforuri(uri)
-            if certificate_claim.get('certificate', False):
-                certificate = ClaimDict.load_dict(certificate_claim['certificate'])
-                if not certificate.certificate_id:
-                    return {'error': 'Certificate has no id'}
-                elif not certificate_id:
-                    certificate_id = certificate.certificate_id
-                elif certificate.certificate_id != certificate_id:
-                    return {'error': 'URI certificate id does not resolve to given \
-                                      certificate id, perhaps you need to \
-                                      \"revokeandupdatecertificate\" or \"updateclaimsignature\"'}
-                if parsed_uri.path:
-                    name = parsed_uri.path
-                else:
-                    name = parsed_uri.name
-            elif not parsed_uri.path:
+            if parsed_uri.path:
+                try:
+                    if smart_decode(val).is_certificate:
+                        return {'error': 'Claim in a channel should not contain a certificate'}
+                except DecodeError as err:
+                    return {'error': 'Failed to decode claim: %s' % err}
+                name = parsed_uri.path
+            else:
                 try:
                     if not smart_decode(val).is_certificate:
                         return {'error': 'Channel claim does not contain a certificate'}
                 except DecodeError as err:
                     return {'error': 'Failed to decode certificate in claim: %s' % err}
                 name = parsed_uri.name
-            else:
-                return {'error': 'Cannot make claim in channel that does not exist'}
         else:
             name = parsed_uri.name
 
