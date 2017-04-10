@@ -929,10 +929,13 @@ class Commands:
                 result['claim'] = self.getclaimbynameinchannel(uri, parsed_uri.path, raw)
             else:
                 result['claims_in_channel'] = self.getclaimsinchannel(uri, raw)
+
         if parsed_uri.claim_id and parsed_uri.name:
             claim = self.getclaimbyid(parsed_uri.claim_id, raw)
-            if claim['name'] != parsed_uri.name:
-                return {'error': 'name does not match claim id'}
+            if not parsed_uri.is_channel and claim['claim_id'] != parsed_uri.claim_id:
+                return {'error': 'certificate does not match uri'}
+            elif parsed_uri.is_channel and parsed_uri.path and claim['name'] != parsed_uri.name:
+                return {'error': 'channel claim does not match uri'}
             if parsed_uri.is_channel:
                 result['certificate'] = claim
             else:
