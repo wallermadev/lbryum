@@ -39,7 +39,7 @@ labeled as 2.7.1. Subsequent releases will follow
 ### Fixed
   * fix return amounts for claim list commands
   * return supports list for claim queries
-  *
+  * fix bug verifying the claim value for a new certificate claim
 
 ## [2.7.12] - 2017-03-10
 ### Changed
