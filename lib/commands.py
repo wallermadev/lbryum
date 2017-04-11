@@ -736,15 +736,15 @@ class Commands:
         self.network.send([('blockchain.address.subscribe', [address])], callback)
         return True
 
-    def validate_claim_signature(self, claim, claim_address):
+    def validate_claim_signature_and_get_channel_name(self, claim, claim_address):
         cert_id = claim.certificate_id
         response = self.network.synchronous_get(('blockchain.claimtrie.getclaimbyid',
                                                  [cert_id]))
         if response:
             certificate = smart_decode(response['value'])
             if Commands._validate_signed_claim(claim, claim_address, certificate):
-                return True
-        return False
+                return True, response['name']
+        return False, None
 
     def parse_and_validate_claim_result(self, claim_result, raw=False):
         if not claim_result or 'value' not in claim_result:
@@ -767,7 +767,10 @@ class Commands:
             if decoded.has_signature:
                 claim_result['has_signature'] = True
                 claim_result['signature_is_valid'] = False
-                if self.validate_claim_signature(decoded, claim_result['address']):
+                validated, channel_name = self.validate_claim_signature_and_get_channel_name(
+                    decoded, claim_result['address'])
+                claim_result['channel_name'] = channel_name
+                if validated:
                     claim_result['signature_is_valid'] = True
         return claim_result
 
@@ -977,7 +980,10 @@ class Commands:
                 response['has_signature'] = True
                 response['signature'] = decoded_claim.signature
                 response['certificate'] = self.getclaimbyid(decoded_claim.certificate_id)
-                if self.validate_claim_signature(decoded_claim, raw_claim['address']):
+                validated, channel_name = self.validate_claim_signature_and_get_channel_name(
+                    decoded_claim, raw_claim['address'])
+                response['channel_name'] = channel_name
+                if validated:
                     response['signature_is_valid'] = True
                 else:
                     response['signature_is_valid'] = False
@@ -1340,7 +1346,9 @@ class Commands:
                 'error': ('can update claim for lbry://{}#{}, but the signing key is '
                           'missing for certificate {}').format(name, claim_id, certificate_id)
             }
-        elif self.validate_claim_signature(claim, claim_address):
+        validated, channel_name = self.validate_claim_signature_and_get_channel_name(
+            claim, claim_address)
+        if validated:
             return {
                 'error': 'lbry://{}#{} has a valid signature already'.format(name, claim_id)
             }
