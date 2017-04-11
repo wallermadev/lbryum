@@ -35,6 +35,7 @@ labeled as 2.7.1. Subsequent releases will follow
   * add `claim_sequence` and `claim_address` to claim responses
   * by default expect a hex encoded `val` for `claim` and `update`
   * automatically handle claim signing using default certificate (if one has been made) via `claim` and `update` commands
+  # add `channel_name' to claim responses for signed claims
   
 ### Fixed
   * fix return amounts for claim list commands
