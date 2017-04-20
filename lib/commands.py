@@ -1873,6 +1873,7 @@ def get_parser():
     group.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Show debugging information")
     group.add_argument("-P", "--portable", action="store_true", dest="portable", default=False, help="Use local 'electrum_data' directory")
     group.add_argument("-w", "--wallet", dest="wallet_path", help="wallet path")
+    group.add_argument("-D", "--dir", dest="lbryum_path", help="electrum directory")
     # create main parser
     parser = argparse.ArgumentParser(
         parents=[parent_parser],
