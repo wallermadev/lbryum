@@ -137,6 +137,15 @@ class Daemon(DaemonThread):
                     wallet.start_threads(self.network)
             else:
                 wallet = Wallet(storage)
+                # automatically generate wallet for lbrynet
+                if not storage.file_exists:
+                    seed = wallet.make_seed()
+                    wallet.add_seed(seed, None)
+                    wallet.create_master_keys(None)
+                    wallet.create_main_account()
+                    wallet.synchronize()
+
+
                 wallet.start_threads(self.network)
             if wallet:
                 self.wallets[path] = wallet

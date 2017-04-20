@@ -382,10 +382,5 @@ if __name__ == '__main__':
                 result = run_offline_command(config, config_options)
 
     # print result
-    if type(result) in [str, unicode]:
-        print_msg(result)
-    elif type(result) is dict and result.get('error'):
-        print_stderr(result.get('error'))
-    elif result is not None:
-        print_msg(json_encode(result))
+    print_msg(json_encode(result))
     sys.exit(0)
