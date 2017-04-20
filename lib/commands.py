@@ -1129,20 +1129,18 @@ class Commands:
         return self.parse_and_validate_claim_result(claims, raw)
 
     @command('w')
-    def getnameclaims(self, raw=False, include_abandoned=False):
+    def getnameclaims(self, raw=False, include_abandoned=False, include_supports=True):
         """
         Get  my name claims
         """
 
-        result = self.wallet.get_name_claims()
+        result = self.wallet.get_name_claims(include_abandoned=include_abandoned,
+                                             include_supports=include_supports)
         claims = format_amount_value(result)
         name_claims = []
         for claim in claims:
             parsed = self.parse_and_validate_claim_result(claim, raw)
-            if not include_abandoned and parsed['is_spent']:
-                continue
-            else:
-                name_claims.append(parsed)
+            name_claims.append(parsed)
 
         return name_claims
 
@@ -1153,9 +1151,9 @@ class Commands:
         """
 
         certificate_claims = []
-        for claim in format_lbrycrd_keys(self.wallet.get_name_claims()):
-            if not include_abandoned and claim['is_spent']:
-                continue
+        name_claims = self.wallet.get_name_claims(include_abandoned=include_abandoned,
+                                                  include_supports=False)
+        for claim in format_lbrycrd_keys(name_claims):
             try:
                 decoded = smart_decode(claim['value'])
                 if decoded.is_certificate:
@@ -1218,7 +1216,7 @@ class Commands:
         certificate_id = parsed_claim['certificate_id']
 
         if not skip_update_check:
-            my_claims = [claim for claim in self.getnameclaims() if claim['name'] == name]
+            my_claims = [claim for claim in self.getnameclaims(include_supports=False) if claim['name'] == name]
             if len(my_claims) > 1:
                 return {'success': False, 'reason': "Dont know which claim to update"}
             if my_claims:
@@ -1328,7 +1326,7 @@ class Commands:
         claim_value = None
         claim_address = None
         if claim_id is None:
-            claims = self.getnameclaims(raw=True)
+            claims = self.getnameclaims(raw=True, include_supports=False)
             for claim in claims:
                 if claim['name'] == name and not claim['is_spent']:
                     claim_id = claim['claim_id']
@@ -1799,6 +1797,7 @@ command_options = {
     'set_default_certificate': (None, "--set_default_certificate", "Set the new certificate as the default, even if there already is one"),
     'amount': ("-a", "--amount", "amount to use in updated name claim"),
     'include_abandoned': (None, "--include_abandoned", "include abandoned claims"),
+    'include_supports': (None,"--include_supports", "include supports"),
     'skip_update_check': (None, "--skip_update_check", "do not check for an existing unspent claim before making a new one"),
     'revoke': (None, "--revoke", "if true, create a new signing key and revoke the old one"),
     'val': (None, '--value', 'claim value')

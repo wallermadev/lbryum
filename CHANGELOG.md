@@ -42,6 +42,7 @@ labeled as 2.7.1. Subsequent releases will follow
   * return supports list for claim queries
   * fix bug verifying the claim value for a new certificate claim
   * fixed update command
+  * fix bugs related to get_name_claims() returning supports
 
 ## [2.7.12] - 2017-03-10
 ### Changed

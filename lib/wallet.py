@@ -996,7 +996,7 @@ class Abstract_Wallet(PrintError):
 
         return h2
 
-    def get_name_claims(self, domain=None):
+    def get_name_claims(self, domain=None, include_abandoned=True, include_supports=True):
         claims = []
         if domain is None:
             domain = self.get_account_addresses(None)
@@ -1010,6 +1010,10 @@ class Abstract_Wallet(PrintError):
                 tx = self.transactions.get(prevout_hash)
                 tx.deserialize()
                 txout = tx.outputs()[int(prevout_n)]
+                if not include_abandoned and txo in txis:
+                    continue
+                if not include_supports and txout[0] & TYPE_SUPPORT:
+                    continue
                 if txout[0] & (TYPE_CLAIM | TYPE_UPDATE | TYPE_SUPPORT):
                     local_height = self.network.get_local_height()
                     expired = tx_height + lbrycrd.EXPIRATION_BLOCKS <= local_height

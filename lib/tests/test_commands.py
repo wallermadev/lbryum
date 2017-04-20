@@ -15,7 +15,7 @@ class MocWallet(object):
     def make_unsigned_transaction(self, coins, outputs, config, tx_fee, change_addr):
         raise util.NotEnoughFunds()
 
-    def get_name_claims(self):
+    def get_name_claims(self, domain=None, include_abandoned=True, include_supports=True):
         return []
 
     def create_new_address(self, **kwargs):
