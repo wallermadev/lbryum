@@ -15,6 +15,21 @@ if sys.version_info[:3] < (2, 7, 0):
 
 data_files = []
 
+requires = [
+    'slowaes>=0.1a1',
+    'ecdsa==0.13',
+    'pbkdf2',
+    'requests',
+    'qrcode',
+    'protobuf==3.2.0',
+    'dnspython',
+    'jsonrpclib',
+    'six>=1.9.0',
+    'appdirs==1.4.3',
+    'lbryschema==0.0.4'
+]
+
+
 if False and platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
     usr_share = os.path.join(sys.prefix, "share")
     if not os.access(usr_share, os.W_OK):
@@ -30,19 +45,7 @@ if False and platform.system() in ['Linux', 'FreeBSD', 'DragonFly']:
 setup(
     name="lbryum",
     version=version.LBRYUM_VERSION,
-    install_requires=[
-        'slowaes>=0.1a1',
-        'ecdsa>=0.9',
-        'pbkdf2',
-        'requests',
-        'qrcode',
-        'protobuf==3.2.0',
-        'dnspython',
-        'jsonrpclib',
-        'six>=1.9.0',
-        'appdirs',
-        'lbryschema==0.0.3'
-    ],
+    install_requires=requires,
     packages=[
         'lbryum',
         'lbryum_gui',

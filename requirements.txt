@@ -1,0 +1,11 @@
+slowaes>=0.1a1
+ecdsa==0.13
+pbkdf2
+requests
+qrcode
+protobuf==3.2.0
+dnspython
+jsonrpclib
+six>=1.9.0
+appdirs==1.4.3
+git+https://github.com/lbryio/lbryschema.git@v0.0.4#egg=lbryschema
