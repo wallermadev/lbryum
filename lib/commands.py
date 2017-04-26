@@ -44,7 +44,7 @@ from lbrycrd import is_address, hash_160_to_bc_address, hash_160, COIN, TYPE_ADD
 from lbrycrd import TYPE_CLAIM, TYPE_SUPPORT, TYPE_UPDATE, RECOMMENDED_CLAIMTRIE_HASH_CONFIRMS
 from transaction import Transaction
 from transaction import deserialize as deserialize_transaction, script_GetOp, decode_claim_script
-from transaction import get_address_from_output_script
+from transaction import get_address_from_output_script, get_claim_id_from_raw_tx
 import paymentrequest
 from paymentrequest import PR_PAID, PR_UNPAID, PR_UNKNOWN, PR_EXPIRED
 import contacts
@@ -798,8 +798,8 @@ class Commands:
         Verify proof for name claim
         """
 
-        def _build_response(name, value, claim_id, txid, n, amount, effective_amount,
-                            claim_sequence, claim_address, supports):
+        def _build_response(name, value, claim_id, txid, n, amount,
+                            claim_address):
             r = {
                     'name': name,
                     'value': value.encode('hex'),
@@ -807,19 +807,13 @@ class Commands:
                     'txid': txid,
                     'nout': n,
                     'amount': str(Decimal(amount)/COIN),
-                    'effective_amount': str(Decimal(effective_amount) / COIN),
                     'height': height,
                     'depth': depth,
-                    'claim_sequence': claim_sequence,
                     'address': claim_address,
-                    'supports': supports
                 }
             return r
 
         def _parse_proof_result(name, result):
-            support_amount = sum(samount for stxid, sn, samount in result['supports'])
-            supports = [{'txid': stxid, 'nout': snout, 'amount': float(samount) / float(COIN)}
-                        for (stxid, snout, samount) in result['supports']]
             if 'txhash' in result['proof'] and 'nOut' in result['proof']:
                 if 'transaction' in result:
                     computed_txhash = Hash(result['transaction'].decode('hex'))[::-1].encode('hex')
@@ -829,13 +823,11 @@ class Commands:
                         if 0 <= nOut < len(tx['outputs']):
                             scriptPubKey = tx['outputs'][nOut]['scriptPubKey']
                             amount = tx['outputs'][nOut]['value']
-                            effective_amount = amount + support_amount
                             decoded_script = [r for r in script_GetOp(scriptPubKey.decode('hex'))]
                             decode_out = decode_claim_script(decoded_script)
                             decode_address = get_address_from_output_script(scriptPubKey.decode('hex'))
                             claim_address = decode_address[1][1]
-                            claim_id = result['claim_id']
-                            claim_sequence = result['claim_sequence']
+                            claim_id = get_claim_id_from_raw_tx(result['transaction'], computed_txhash, nOut)
                             if decode_out is False:
                                 return {'error': 'failed to decode as claim script'}
                             n, script = decode_out
@@ -843,8 +835,7 @@ class Commands:
                             if decoded_name == name:
                                 return _build_response(name, decoded_value, claim_id,
                                                        computed_txhash, nOut, amount,
-                                                       effective_amount, claim_sequence,
-                                                       claim_address, supports)
+                                                       claim_address)
                             return {'error': 'name in proof did not match requested name'}
                         return {'error': 'invalid nOut: %d (let(outputs): %d' % (nOut, len(tx['outputs']))}
                     return {'error': "computed txid did not match given transaction: %s vs %s" %

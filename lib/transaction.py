@@ -999,3 +999,26 @@ class Transaction:
         print_error(priority, threshold)
 
         return priority < threshold
+
+# Get claim ID in hex, given a transaction in hex containing
+# the claim, and the corresponding txid and its nout
+def get_claim_id_from_raw_tx(tx_hex, txid_hex, nout):
+    tx = deserialize(tx_hex)
+    if len(tx.get('outputs')) < nout+1:
+        raise Exception("nout {} too large for tx {}".format(nout, tx))
+    output = tx.get('outputs')[nout]
+    script = output.get('scriptPubKey').decode('hex')
+    decoded_script = [s for s in script_GetOp(script)]
+    out = decode_claim_script(decoded_script)
+    if out is False:
+        raise Exception("{}:{}, is not a claim script. {}".format(txid_hex, nout, decoded_script))
+    claim,claim_script = out
+    # if name claim, calculate claim id from txid nout
+    if type(claim) == NameClaim:
+        return txid_hex_nout_to_claim_id_hex(txid_hex, nout)
+    # if update or support, return the claim id in the script
+    else:
+        return encode_claim_id_hex(claim.claim_id)
+
+
+

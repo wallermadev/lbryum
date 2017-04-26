@@ -64,6 +64,12 @@ def decode_claim_id_hex(claim_id_hex):
 def encode_claim_id_hex(claim_id):
     return rev_hex(claim_id.encode('hex'))
 
+def txid_hex_nout_to_claim_id_hex(txid_hex, nout):
+    claim_id = claim_id_hash(rev_hex(txid_hex).decode('hex'),nout)
+    claim_id = encode_claim_id_hex(claim_id)
+    return claim_id
+
+
 def strip_PKCS7_padding(s):
     """return s stripped of PKCS7 padding"""
     if len(s)%16 or not s:
