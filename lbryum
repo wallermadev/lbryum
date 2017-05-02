@@ -208,10 +208,12 @@ def init_cmdline(config_options):
     else:
         password = None
 
-    config_options['password'] = password
-
     if cmd.name == 'password':
-        new_password = prompt_password('New password:')
+        if config.get('new_password'):
+            new_password = config.get('new_password')
+        else:
+            new_password = prompt_password('New password:')
+
         config_options['new_password'] = new_password
 
     return cmd, password

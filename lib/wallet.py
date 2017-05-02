@@ -194,6 +194,10 @@ class Abstract_Wallet(PrintError):
         # Verified transactions.  Each value is a (height, timestamp, block_pos) tuple.  Access with self.lock.
         self.verified_tx   = storage.get('verified_tx3',{})
 
+        # True if password for wallet is correct.
+        self.decrypted = False;
+
+
         # there is a difference between wallet.up_to_date and interface.is_up_to_date()
         # interface.is_up_to_date() returns true when all requests have been answered and processed
         # wallet.up_to_date is true when the wallet is synchronized (stronger requirement)
@@ -364,6 +368,14 @@ class Abstract_Wallet(PrintError):
 
     def permit_account_naming(self):
         return self.can_create_accounts()
+
+    def set_is_decrypted(self, decrypted):
+        with self.lock:
+            self.decrypted = decrypted
+
+    def is_decrypted(self):
+        with self.lock:
+            return self.decrypted
 
     def set_up_to_date(self, up_to_date):
         with self.lock:
@@ -1310,6 +1322,16 @@ class Abstract_Wallet(PrintError):
             # remain so they will be GC-ed
             self.storage.put('stored_height', self.get_local_height())
         self.storage.write()
+   
+    def wait_until_authenticated(self, callback=None):
+        def wait_for_password():
+            while not self.is_decrypted():
+                if callback:
+                    returned = callback("Waiting for password")
+                time.sleep(0.1)
+
+        if not self.is_decrypted():
+            wait_for_password()
 
     def wait_until_synchronized(self, callback=None):
         def wait_for_wallet():

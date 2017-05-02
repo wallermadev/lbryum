@@ -25,7 +25,20 @@ labeled as 2.7.1. Subsequent releases will follow
     - `updateclaimsignature`
     - `updatecertificate`
     - `cansignwithcertificate`
-      
+    * Added new conditional to `init_cmdline` to check if `cmd.name` is `password` in `lbryum`
+    * Added new conditional to `init_cmdline` to check if `new_password` has been parsed in `lbryum`
+    * Added new conditional to `init_cmdline` to set `new_password` using `prompt_password('New password:')` if it was not provided. in `lbryum`
+    * Added `new_password` to `command_options` in `commands.py` (`*N or **new_password`)
+    * Added conditional to parser `if cmd.name == 'password:'` in `commands.py`
+    * Added new argument to subparser when condition is true `new_password` is set as a optional argument in `commands.py`
+    * Added bool `self.decrypted = False;` to `wallet.py`
+    * Added `set_is_decrypted` method to `wallet.py`
+    * Added `is_decrypted` method to `wallet.py`
+    * Added `wait_until_authenticated(self, callback=None)` method to `wallet.py`
+    * Added `wait_for_password()` to `wallet.py` within `wait_until_authenticated(self, callback=None)`
+    * Added `if not self.is_decrypted()` conditional as so start up pauses if the password is required to continue  
+
+
 ### Changed
   * include claim address in return from getvalueforname
   * change `abandon` to take `claim_id` instead of `txid` and `nout`
@@ -36,6 +49,9 @@ labeled as 2.7.1. Subsequent releases will follow
   * by default expect a hex encoded `val` for `claim` and `update`
   * automatically handle claim signing using default certificate (if one has been made) via `claim` and `update` commands
   # add `channel_name' to claim responses for signed claims
+  * Fixed scope issue with `new_password` declaration.
+  * Fixed PyLint Errors and warnings
+  * removed defunct new_password logic from `init_cmdline`
   
 ### Fixed
   * fix return amounts for claim list commands

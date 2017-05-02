@@ -206,6 +206,14 @@ class Commands:
         self.wallet.storage.write()
         return {'password':self.wallet.use_encryption}
 
+    @command('wp')
+    def importWallet(self, path):
+        print "Placeholder"
+
+    @command('wp')
+    def exportWallet(self, path=None):
+        print "Placeholder"
+
     @command('')
     def getconfig(self, key):
         """Return a configuration variable. """
@@ -1759,6 +1767,7 @@ param_descriptions = {
 
 command_options = {
     'password':    ("-W", "--password",    "Password"),
+    'new_password':    ("-N", "--new_password",    "New Password"),
     'receiving':   (None, "--receiving",   "Show only receiving addresses"),
     'change':      (None, "--change",      "Show only change addresses"),
     'frozen':      (None, "--frozen",      "Show only frozen addresses"),
@@ -1897,6 +1906,8 @@ def get_parser():
         cmd = known_commands[cmdname]
         p = subparsers.add_parser(cmdname, parents=[parent_parser], help=cmd.help, description=cmd.description)
         #p.set_defaults(func=run_cmdline)
+        if cmdname == 'password':
+            p.add_argument("-N", "--new_password", dest="new_password", help="new password")
         if cmd.requires_password:
             p.add_argument("-W", "--password", dest="password", default=None, help="password")
         for optname, default in zip(cmd.options, cmd.defaults):
