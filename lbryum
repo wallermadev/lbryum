@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/home/wallermadev/Desktop/LBRY/lbry/lbry-venv/bin/python2
 # -*- mode: python -*-
 #
 # Electrum - lightweight Bitcoin client
@@ -208,6 +208,8 @@ def init_cmdline(config_options):
     else:
         password = None
 
+    config_options['password'] = password
+
     if cmd.name == 'password':
         if config.get('new_password'):
             new_password = config.get('new_password')
@@ -218,7 +220,7 @@ def init_cmdline(config_options):
 
     return cmd, password
 
-
+# Offline commands
 def run_offline_command(config, config_options):
     cmdname = config.get('cmd')
     cmd = known_commands[cmdname]
