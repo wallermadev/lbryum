@@ -57,6 +57,8 @@ class WalletStorage(PrintError):
         self.lock = threading.RLock()
         self.data = {}
         self.path = path
+        self.dir = os.path.dirname(path)
+        self.filename = os.path.basename(path)
         self.file_exists = False
         self.modified = False
         self.print_error("wallet path", self.path)
